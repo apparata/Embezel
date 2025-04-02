@@ -1,0 +1,588 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 70;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1C1CE25F591338C9811B3DC7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70FB4550D5A7CEA3C8DA15A3 /* ContentView.swift */; };
+		2E9236EECD77C48FB66F723D /* SwiftUIToolbox in Frameworks */ = {isa = PBXBuildFile; productRef = DC593BC6AEF383A6C548287F /* SwiftUIToolbox */; };
+		3423F0236D15F6CA4F82ACD8 /* Constructs in Frameworks */ = {isa = PBXBuildFile; productRef = C89651307770B232DADA52B4 /* Constructs */; };
+		3636672744367FD81696CFE8 /* CGMath in Frameworks */ = {isa = PBXBuildFile; productRef = DCC17B9B6D7EFE4BA29735BF /* CGMath */; };
+		41D6C31A2D943F46008A59B4 /* ContentModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D6C3192D943F46008A59B4 /* ContentModel.swift */; };
+		5218003D89EF2F67C116AEB2 /* AttributionsUI in Frameworks */ = {isa = PBXBuildFile; productRef = E6070C47C82B55C86E68E92F /* AttributionsUI */; };
+		62F5383A6379EBAD21FCC1DD /* MathKit in Frameworks */ = {isa = PBXBuildFile; productRef = 72E4AA14288C911528E4C8B6 /* MathKit */; };
+		69D3E64161FA7403F3465076 /* SystemKit in Frameworks */ = {isa = PBXBuildFile; productRef = FE0F897694EE3B66C1824E13 /* SystemKit */; };
+		80EA0ACDDFB33B3B08D6B4B2 /* MacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71B2A8E3592C1FCA4D1C682E /* MacApp.swift */; };
+		909278096B6CB55326F4543C /* SensibleStyling in Frameworks */ = {isa = PBXBuildFile; productRef = 7B34F8871E1F2DC7B20B3634 /* SensibleStyling */; };
+		9AE1E6E63551C7FB074050CD /* Markin in Frameworks */ = {isa = PBXBuildFile; productRef = 0DDB9327B893DCEBA0F09C55 /* Markin */; };
+		CBE98A26C387A2F70A490E98 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CABC760C742C41AAD9441A73 /* Assets.xcassets */; };
+		DECFC7C3598C0ECCFB0BCB79 /* CollectionKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7F708413EEAF4FE537BE0B17 /* CollectionKit */; };
+		F7149630989B2A0309F46B6C /* TextToolbox in Frameworks */ = {isa = PBXBuildFile; productRef = C86348429FCE2163DCD2FE62 /* TextToolbox */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		41D6C3192D943F46008A59B4 /* ContentModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentModel.swift; sourceTree = "<group>"; };
+		41D6C33E2D94521F008A59B4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		70FB4550D5A7CEA3C8DA15A3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		71B2A8E3592C1FCA4D1C682E /* MacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacApp.swift; sourceTree = "<group>"; };
+		CABC760C742C41AAD9441A73 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D464FD8B3999741D94CE4CE8 /* Embezel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Embezel.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		41D6C2E92D9410E2008A59B4 /* Help Window */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Help Window"; sourceTree = "<group>"; };
+		41D6C2ED2D9410E8008A59B4 /* Main Window */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Main Window"; sourceTree = "<group>"; };
+		41D6C2F12D9410EC008A59B4 /* Menu Bar Button */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Menu Bar Button"; sourceTree = "<group>"; };
+		41D6C2F52D9410F0008A59B4 /* My Menu Commands */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "My Menu Commands"; sourceTree = "<group>"; };
+		41D6C2F82D9410F4008A59B4 /* Preview Content */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Preview Content"; sourceTree = "<group>"; };
+		41D6C2FC2D9410F9008A59B4 /* Settings */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Settings; sourceTree = "<group>"; };
+		41D6C3072D941104008A59B4 /* Utilities */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Utilities; sourceTree = "<group>"; };
+		41D6C30E2D941E38008A59B4 /* Device View */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Device View"; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		360EFE9A84CBAD3B1D36719E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5218003D89EF2F67C116AEB2 /* AttributionsUI in Frameworks */,
+				3636672744367FD81696CFE8 /* CGMath in Frameworks */,
+				DECFC7C3598C0ECCFB0BCB79 /* CollectionKit in Frameworks */,
+				3423F0236D15F6CA4F82ACD8 /* Constructs in Frameworks */,
+				9AE1E6E63551C7FB074050CD /* Markin in Frameworks */,
+				62F5383A6379EBAD21FCC1DD /* MathKit in Frameworks */,
+				909278096B6CB55326F4543C /* SensibleStyling in Frameworks */,
+				2E9236EECD77C48FB66F723D /* SwiftUIToolbox in Frameworks */,
+				69D3E64161FA7403F3465076 /* SystemKit in Frameworks */,
+				F7149630989B2A0309F46B6C /* TextToolbox in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4FB7163564D96346425362C7 /* AppSnap */ = {
+			isa = PBXGroup;
+			children = (
+				41D6C30E2D941E38008A59B4 /* Device View */,
+				41D6C2E92D9410E2008A59B4 /* Help Window */,
+				41D6C2ED2D9410E8008A59B4 /* Main Window */,
+				41D6C2F12D9410EC008A59B4 /* Menu Bar Button */,
+				41D6C2F52D9410F0008A59B4 /* My Menu Commands */,
+				41D6C2F82D9410F4008A59B4 /* Preview Content */,
+				41D6C2FC2D9410F9008A59B4 /* Settings */,
+				41D6C3072D941104008A59B4 /* Utilities */,
+				CABC760C742C41AAD9441A73 /* Assets.xcassets */,
+				70FB4550D5A7CEA3C8DA15A3 /* ContentView.swift */,
+				41D6C3192D943F46008A59B4 /* ContentModel.swift */,
+				71B2A8E3592C1FCA4D1C682E /* MacApp.swift */,
+				41D6C33E2D94521F008A59B4 /* Info.plist */,
+			);
+			path = AppSnap;
+			sourceTree = "<group>";
+		};
+		B6EFD495CD0460A145D51E0E = {
+			isa = PBXGroup;
+			children = (
+				4FB7163564D96346425362C7 /* AppSnap */,
+				F256622E68F22101C3135018 /* Products */,
+			);
+			indentWidth = 4;
+			sourceTree = "<group>";
+			tabWidth = 4;
+			usesTabs = 0;
+		};
+		F256622E68F22101C3135018 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D464FD8B3999741D94CE4CE8 /* Embezel.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		573ABF1D31B8A57825C445AE /* AppSnap */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 158FD3C6016835DC171A5E2A /* Build configuration list for PBXNativeTarget "AppSnap" */;
+			buildPhases = (
+				5E6463B95B69D70DDF319948 /* Sources */,
+				9626A08405213AE44D8D022E /* Swift Lint */,
+				7C8416878FB536F37E840C31 /* Resources */,
+				360EFE9A84CBAD3B1D36719E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				41D6C2E92D9410E2008A59B4 /* Help Window */,
+				41D6C2ED2D9410E8008A59B4 /* Main Window */,
+				41D6C2F12D9410EC008A59B4 /* Menu Bar Button */,
+				41D6C2F52D9410F0008A59B4 /* My Menu Commands */,
+				41D6C2F82D9410F4008A59B4 /* Preview Content */,
+				41D6C2FC2D9410F9008A59B4 /* Settings */,
+				41D6C3072D941104008A59B4 /* Utilities */,
+				41D6C30E2D941E38008A59B4 /* Device View */,
+			);
+			name = AppSnap;
+			packageProductDependencies = (
+				E6070C47C82B55C86E68E92F /* AttributionsUI */,
+				DCC17B9B6D7EFE4BA29735BF /* CGMath */,
+				7F708413EEAF4FE537BE0B17 /* CollectionKit */,
+				C89651307770B232DADA52B4 /* Constructs */,
+				0DDB9327B893DCEBA0F09C55 /* Markin */,
+				72E4AA14288C911528E4C8B6 /* MathKit */,
+				7B34F8871E1F2DC7B20B3634 /* SensibleStyling */,
+				DC593BC6AEF383A6C548287F /* SwiftUIToolbox */,
+				FE0F897694EE3B66C1824E13 /* SystemKit */,
+				C86348429FCE2163DCD2FE62 /* TextToolbox */,
+			);
+			productName = AppSnap;
+			productReference = D464FD8B3999741D94CE4CE8 /* Embezel.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B197E8520AA8944A42287167 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1620;
+				ORGANIZATIONNAME = "Apparata AB";
+			};
+			buildConfigurationList = 9CF644BC4ACCBA18D00CF3A9 /* Build configuration list for PBXProject "AppSnap" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = B6EFD495CD0460A145D51E0E;
+			packageReferences = (
+				8C9D2E68E397659403E722E4 /* XCRemoteSwiftPackageReference "AttributionsUI" */,
+				E8109032552BF1A261160FAC /* XCRemoteSwiftPackageReference "CGMath" */,
+				20DC5E17D2A8BF59D64CF212 /* XCRemoteSwiftPackageReference "CollectionKit" */,
+				FC7FF07596503CA755FF27A9 /* XCRemoteSwiftPackageReference "Constructs" */,
+				FA805E6339222A05B2BC3881 /* XCRemoteSwiftPackageReference "Markin" */,
+				0DE51A9FC627DD2499B543C9 /* XCRemoteSwiftPackageReference "MathKit" */,
+				FCAE13C4C0CB8F7ADB6B9BCE /* XCRemoteSwiftPackageReference "SensibleStyling" */,
+				05F2B7310A438379886630DD /* XCRemoteSwiftPackageReference "SwiftUIToolbox" */,
+				484E7C383B3195318EF30F97 /* XCRemoteSwiftPackageReference "SystemKit" */,
+				4BF44F8C44F5ED38FFFD0378 /* XCRemoteSwiftPackageReference "TextToolbox" */,
+			);
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				573ABF1D31B8A57825C445AE /* AppSnap */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7C8416878FB536F37E840C31 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CBE98A26C387A2F70A490E98 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		9626A08405213AE44D8D022E /* Swift Lint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Swift Lint";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if which mint >/dev/null; then\n    /usr/bin/xcrun --sdk macosx mint run swiftlint lint --config \"${PROJECT_DIR}/.swiftlint.yml\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5E6463B95B69D70DDF319948 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1C1CE25F591338C9811B3DC7 /* ContentView.swift in Sources */,
+				80EA0ACDDFB33B3B08D6B4B2 /* MacApp.swift in Sources */,
+				41D6C31A2D943F46008A59B4 /* ContentModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		31D8D05117637702147B599A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Apparata AB. All rights reserved.";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Debug;
+		};
+		3DEA4A6D6F13F2FF509A36F1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AppSnap/AppSnap.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"AppSnap/Preview Content\"";
+				DEVELOPMENT_TEAM = DR5YAK7GKS;
+				ENABLE_BITCODE = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AppSnap/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Embezel;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Apparata AB. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = se.apparata.AppSnap;
+				PRODUCT_NAME = Embezel;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		720480A9B14B2AC5102E2670 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Apparata AB. All rights reserved.";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Release;
+		};
+		BBE019689C045B3C5C641B27 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AppSnap/AppSnap.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"AppSnap/Preview Content\"";
+				DEVELOPMENT_TEAM = DR5YAK7GKS;
+				ENABLE_BITCODE = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AppSnap/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Embezel;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Apparata AB. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = se.apparata.AppSnap;
+				PRODUCT_NAME = Embezel;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		158FD3C6016835DC171A5E2A /* Build configuration list for PBXNativeTarget "AppSnap" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BBE019689C045B3C5C641B27 /* Debug */,
+				3DEA4A6D6F13F2FF509A36F1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9CF644BC4ACCBA18D00CF3A9 /* Build configuration list for PBXProject "AppSnap" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				31D8D05117637702147B599A /* Debug */,
+				720480A9B14B2AC5102E2670 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		05F2B7310A438379886630DD /* XCRemoteSwiftPackageReference "SwiftUIToolbox" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apparata/SwiftUIToolbox.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.4.0;
+			};
+		};
+		0DE51A9FC627DD2499B543C9 /* XCRemoteSwiftPackageReference "MathKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apparata/MathKit.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.2;
+			};
+		};
+		20DC5E17D2A8BF59D64CF212 /* XCRemoteSwiftPackageReference "CollectionKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apparata/CollectionKit.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.2.2;
+			};
+		};
+		484E7C383B3195318EF30F97 /* XCRemoteSwiftPackageReference "SystemKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apparata/SystemKit.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.7.0;
+			};
+		};
+		4BF44F8C44F5ED38FFFD0378 /* XCRemoteSwiftPackageReference "TextToolbox" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apparata/TextToolbox.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.1.2;
+			};
+		};
+		8C9D2E68E397659403E722E4 /* XCRemoteSwiftPackageReference "AttributionsUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apparata/AttributionsUI.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.0;
+			};
+		};
+		E8109032552BF1A261160FAC /* XCRemoteSwiftPackageReference "CGMath" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apparata/CGMath.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.2;
+			};
+		};
+		FA805E6339222A05B2BC3881 /* XCRemoteSwiftPackageReference "Markin" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apparata/Markin.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.7.1;
+			};
+		};
+		FC7FF07596503CA755FF27A9 /* XCRemoteSwiftPackageReference "Constructs" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apparata/Constructs.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.2.0;
+			};
+		};
+		FCAE13C4C0CB8F7ADB6B9BCE /* XCRemoteSwiftPackageReference "SensibleStyling" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apparata/SensibleStyling.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.1.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0DDB9327B893DCEBA0F09C55 /* Markin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA805E6339222A05B2BC3881 /* XCRemoteSwiftPackageReference "Markin" */;
+			productName = Markin;
+		};
+		72E4AA14288C911528E4C8B6 /* MathKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0DE51A9FC627DD2499B543C9 /* XCRemoteSwiftPackageReference "MathKit" */;
+			productName = MathKit;
+		};
+		7B34F8871E1F2DC7B20B3634 /* SensibleStyling */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FCAE13C4C0CB8F7ADB6B9BCE /* XCRemoteSwiftPackageReference "SensibleStyling" */;
+			productName = SensibleStyling;
+		};
+		7F708413EEAF4FE537BE0B17 /* CollectionKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 20DC5E17D2A8BF59D64CF212 /* XCRemoteSwiftPackageReference "CollectionKit" */;
+			productName = CollectionKit;
+		};
+		C86348429FCE2163DCD2FE62 /* TextToolbox */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4BF44F8C44F5ED38FFFD0378 /* XCRemoteSwiftPackageReference "TextToolbox" */;
+			productName = TextToolbox;
+		};
+		C89651307770B232DADA52B4 /* Constructs */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FC7FF07596503CA755FF27A9 /* XCRemoteSwiftPackageReference "Constructs" */;
+			productName = Constructs;
+		};
+		DC593BC6AEF383A6C548287F /* SwiftUIToolbox */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 05F2B7310A438379886630DD /* XCRemoteSwiftPackageReference "SwiftUIToolbox" */;
+			productName = SwiftUIToolbox;
+		};
+		DCC17B9B6D7EFE4BA29735BF /* CGMath */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E8109032552BF1A261160FAC /* XCRemoteSwiftPackageReference "CGMath" */;
+			productName = CGMath;
+		};
+		E6070C47C82B55C86E68E92F /* AttributionsUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8C9D2E68E397659403E722E4 /* XCRemoteSwiftPackageReference "AttributionsUI" */;
+			productName = AttributionsUI;
+		};
+		FE0F897694EE3B66C1824E13 /* SystemKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 484E7C383B3195318EF30F97 /* XCRemoteSwiftPackageReference "SystemKit" */;
+			productName = SystemKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = B197E8520AA8944A42287167 /* Project object */;
+}

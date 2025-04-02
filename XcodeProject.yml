@@ -1,0 +1,131 @@
+name: AppSnap
+attributes:
+    ORGANIZATIONNAME: Apparata AB
+
+options:
+    bundleIdPrefix: se.apparata
+    createIntermediateGroups: true
+    deploymentTarget:
+        macOS: 14.0
+    groupSortPosition: top
+    generateEmptyDirectories: true
+    usesTabs: false
+    indentWidth: 4
+    tabWidth: 4
+    defaultConfig: Debug
+
+configs:
+    Debug: debug
+    Release: release
+
+settings:
+    base:
+        SWIFT_VERSION: '5.10'
+        INFOPLIST_KEY_NSHumanReadableCopyright: 'Copyright © 2025 Apparata AB. All rights reserved.'
+    configs:
+        Release:
+            SWIFT_COMPILATION_MODE: wholemodule
+
+packages:
+            AttributionsUI:
+                url: https://github.com/apparata/AttributionsUI.git
+                exactVersion: 1.0.0
+            CGMath:
+                url: https://github.com/apparata/CGMath.git
+                exactVersion: 1.0.2
+            CollectionKit:
+                url: https://github.com/apparata/CollectionKit.git
+                exactVersion: 0.2.2
+            Constructs:
+                url: https://github.com/apparata/Constructs.git
+                exactVersion: 1.2.0
+            Markin:
+                url: https://github.com/apparata/Markin.git
+                exactVersion: 0.7.1
+            MathKit:
+                url: https://github.com/apparata/MathKit.git
+                exactVersion: 1.0.2
+            SensibleStyling:
+                url: https://github.com/apparata/SensibleStyling.git
+                exactVersion: 0.1.1
+            SwiftUIToolbox:
+                url: https://github.com/apparata/SwiftUIToolbox.git
+                exactVersion: 1.4.0
+            SystemKit:
+                url: https://github.com/apparata/SystemKit.git
+                exactVersion: 1.7.0
+            TextToolbox:
+                url: https://github.com/apparata/TextToolbox.git
+                exactVersion: 1.1.2
+        
+targets:
+    AppSnap:
+        type: application
+        platform: macOS
+        entitlements:
+            path: 'AppSnap/AppSnap.entitlements'
+            properties:
+                com.apple.security.app-sandbox: true
+                com.apple.security.files.user-selected.read-write: true
+                com.apple.security.network.client: true
+        sources:
+            - path: AppSnap
+        dependencies:
+            - package: AttributionsUI
+            - package: CGMath
+            - package: CollectionKit
+            - package: Constructs
+            - package: Markin
+            - package: MathKit
+            - package: SensibleStyling
+            - package: SwiftUIToolbox
+            - package: SystemKit
+            - package: TextToolbox
+        settings:
+            base:
+                GENERATE_INFOPLIST_FILE: Yes
+                ENABLE_PREVIEWS: Yes
+                DEVELOPMENT_ASSET_PATHS: '"AppSnap/Preview Content"'
+                ENABLE_BITCODE: No
+            configs:
+                Debug:
+                    CODE_SIGN_IDENTITY: '-'
+                Release:
+                    CODE_SIGN_IDENTITY: '-'
+        postCompileScripts:
+            - script: |
+                      if which mint >/dev/null; then
+                          /usr/bin/xcrun --sdk macosx mint run swiftlint lint --config "${PROJECT_DIR}/.swiftlint.yml"
+                      fi
+              name: Swift Lint
+              basedOnDependencyAnalysis: No
+
+schemes:
+    AppSnap (Debug):
+        build:
+            targets:
+                AppSnap: [run, profile, analyze, archive]
+        run:
+            config: Debug
+        profile:
+            config: Release
+        analyze:
+            config: Debug
+        archive:
+            config: Release
+            customArchiveName: AppSnap
+            revealArchiveInOrganizer: true
+    AppSnap (Release):
+        build:
+            targets:
+                AppSnap: [run, profile, analyze, archive]
+        run:
+            config: Release
+        profile:
+            config: Release
+        analyze:
+            config: Release
+        archive:
+            config: Release
+            customArchiveName: AppSnap
+            revealArchiveInOrganizer: true

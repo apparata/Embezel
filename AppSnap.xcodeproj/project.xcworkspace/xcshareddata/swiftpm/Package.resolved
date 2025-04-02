@@ -1,0 +1,96 @@
+{
+  "originHash" : "ee67b72eb181009c42aa46f2c98fa59a16a9ab4a998f663c2eb599ed06593093",
+  "pins" : [
+    {
+      "identity" : "attributionsui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apparata/AttributionsUI.git",
+      "state" : {
+        "revision" : "78ed44964b6d1039561b655bd4092a7efbc32c05",
+        "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "cgmath",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apparata/CGMath.git",
+      "state" : {
+        "revision" : "b95983d9edb5b0be07ab5f689cac857ecd0c7f56",
+        "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "collectionkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apparata/CollectionKit.git",
+      "state" : {
+        "revision" : "4d1df096469ffce86336896d79d8fe8d5870aa24",
+        "version" : "0.2.2"
+      }
+    },
+    {
+      "identity" : "constructs",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apparata/Constructs.git",
+      "state" : {
+        "revision" : "c64003fac2c6f33a5b9a9fead7cb73c620ac2973",
+        "version" : "1.2.0"
+      }
+    },
+    {
+      "identity" : "markin",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apparata/Markin.git",
+      "state" : {
+        "revision" : "31f943612b93cff993924e75e7b858ff9008b6bc",
+        "version" : "0.7.1"
+      }
+    },
+    {
+      "identity" : "mathkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apparata/MathKit.git",
+      "state" : {
+        "revision" : "47c58d231ec1618f74f2e92d46e55b4aabf9a9f3",
+        "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "sensiblestyling",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apparata/SensibleStyling.git",
+      "state" : {
+        "revision" : "cf8bef53d3eb35feb662fd26ab6d8c6f4eb07732",
+        "version" : "0.1.1"
+      }
+    },
+    {
+      "identity" : "swiftuitoolbox",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apparata/SwiftUIToolbox.git",
+      "state" : {
+        "revision" : "032f1e9c966e052e1bb6c8455ed3b43c84f27cbf",
+        "version" : "1.4.0"
+      }
+    },
+    {
+      "identity" : "systemkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apparata/SystemKit.git",
+      "state" : {
+        "revision" : "f68baaf9078c2a3aa503b00fd46fbcb243617933",
+        "version" : "1.7.0"
+      }
+    },
+    {
+      "identity" : "texttoolbox",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apparata/TextToolbox.git",
+      "state" : {
+        "revision" : "7dd0fa6105845700248955ada26294f3c64ea296",
+        "version" : "1.1.2"
+      }
+    }
+  ],
+  "version" : 3
+}
