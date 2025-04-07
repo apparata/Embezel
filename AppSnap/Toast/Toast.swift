@@ -1,0 +1,64 @@
+import SwiftUI
+
+/// ```swift
+/// if toastModel.isShowingToast {
+///     Toast("Text of the toast")
+///         .transition(.move(edge: .bottom))
+///         .padding(.bottom, 16)
+/// }
+/// Button("Show toast") {
+///     appModel.copyPrivacyManifestToPasteboard()
+///     toastModel.showToast()
+/// }
+/// ```
+struct Toast: View {
+
+    let title: String
+
+    init(_ title: String) {
+        self.title = title
+    }
+
+    var body: some View {
+        Text(title)
+            .foregroundStyle(.black)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(.white)
+            .clipShape(Capsule())
+    }
+}
+
+@Observable class ToastModel {
+
+    var isShowingToast: Bool = false
+
+    @ObservationIgnored
+    private var hideToastTask: Task<Void, Never>?
+
+    @MainActor func showToast() {
+        if !isShowingToast {
+            withAnimation(.smooth) {
+                isShowingToast = true
+            }
+        }
+        if let hideToastTask {
+            self.hideToastTask = nil
+            hideToastTask.cancel()
+        }
+        hideToastTask = Task {
+            try? await Task.sleep(for: .seconds(2))
+            if !Task.isCancelled {
+                withAnimation(.smooth) {
+                    isShowingToast = false
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    Toast("Copied manifest to pasteboard")
+        .padding(50)
+        .background(Color(NSColor.controlBackgroundColor))
+}

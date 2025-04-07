@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "573ABF1D31B8A57825C445AE"
-               BuildableName = "AppSnap.app"
+               BuildableName = "Embezel.app"
                BlueprintName = "AppSnap"
                ReferencedContainer = "container:AppSnap.xcodeproj">
             </BuildableReference>
@@ -31,7 +31,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "573ABF1D31B8A57825C445AE"
-            BuildableName = "AppSnap.app"
+            BuildableName = "Embezel.app"
             BlueprintName = "AppSnap"
             ReferencedContainer = "container:AppSnap.xcodeproj">
          </BuildableReference>
@@ -54,7 +54,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "573ABF1D31B8A57825C445AE"
-            BuildableName = "AppSnap.app"
+            BuildableName = "Embezel.app"
             BlueprintName = "AppSnap"
             ReferencedContainer = "container:AppSnap.xcodeproj">
          </BuildableReference>
@@ -71,7 +71,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "573ABF1D31B8A57825C445AE"
-            BuildableName = "AppSnap.app"
+            BuildableName = "Embezel.app"
             BlueprintName = "AppSnap"
             ReferencedContainer = "container:AppSnap.xcodeproj">
          </BuildableReference>

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 73;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -32,6 +32,26 @@
 		D464FD8B3999741D94CE4CE8 /* Embezel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Embezel.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		41D6C7E72D9DB7B9008A59B4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				RemoveEffect.metal,
+			);
+			target = 573ABF1D31B8A57825C445AE /* AppSnap */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		41D6C7E82D9DB7B9008A59B4 /* PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 7C8416878FB536F37E840C31 /* Resources */;
+			membershipExceptions = (
+				RemoveEffect.metal,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		41D6C2E92D9410E2008A59B4 /* Help Window */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Help Window"; sourceTree = "<group>"; };
 		41D6C2ED2D9410E8008A59B4 /* Main Window */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Main Window"; sourceTree = "<group>"; };
@@ -40,7 +60,9 @@
 		41D6C2F82D9410F4008A59B4 /* Preview Content */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Preview Content"; sourceTree = "<group>"; };
 		41D6C2FC2D9410F9008A59B4 /* Settings */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Settings; sourceTree = "<group>"; };
 		41D6C3072D941104008A59B4 /* Utilities */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Utilities; sourceTree = "<group>"; };
-		41D6C30E2D941E38008A59B4 /* Device View */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Device View"; sourceTree = "<group>"; };
+		41D6C30E2D941E38008A59B4 /* Device */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Device; sourceTree = "<group>"; };
+		41D6C7E42D9DB79B008A59B4 /* Effects */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (41D6C7E72D9DB7B9008A59B4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 41D6C7E82D9DB7B9008A59B4 /* PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Effects; sourceTree = "<group>"; };
+		41D6C7EF2DA2F0B0008A59B4 /* Toast */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Toast; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,7 +89,9 @@
 		4FB7163564D96346425362C7 /* AppSnap */ = {
 			isa = PBXGroup;
 			children = (
-				41D6C30E2D941E38008A59B4 /* Device View */,
+				41D6C7EF2DA2F0B0008A59B4 /* Toast */,
+				41D6C7E42D9DB79B008A59B4 /* Effects */,
+				41D6C30E2D941E38008A59B4 /* Device */,
 				41D6C2E92D9410E2008A59B4 /* Help Window */,
 				41D6C2ED2D9410E8008A59B4 /* Main Window */,
 				41D6C2F12D9410EC008A59B4 /* Menu Bar Button */,
@@ -127,7 +151,9 @@
 				41D6C2F82D9410F4008A59B4 /* Preview Content */,
 				41D6C2FC2D9410F9008A59B4 /* Settings */,
 				41D6C3072D941104008A59B4 /* Utilities */,
-				41D6C30E2D941E38008A59B4 /* Device View */,
+				41D6C30E2D941E38008A59B4 /* Device */,
+				41D6C7E42D9DB79B008A59B4 /* Effects */,
+				41D6C7EF2DA2F0B0008A59B4 /* Toast */,
 			);
 			name = AppSnap;
 			packageProductDependencies = (
@@ -157,7 +183,6 @@
 				ORGANIZATIONNAME = "Apparata AB";
 			};
 			buildConfigurationList = 9CF644BC4ACCBA18D00CF3A9 /* Build configuration list for PBXProject "AppSnap" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -177,6 +202,7 @@
 				484E7C383B3195318EF30F97 /* XCRemoteSwiftPackageReference "SystemKit" */,
 				4BF44F8C44F5ED38FFFD0378 /* XCRemoteSwiftPackageReference "TextToolbox" */,
 			);
+			preferredProjectObjectVersion = 56;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (

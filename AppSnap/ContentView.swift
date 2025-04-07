@@ -13,50 +13,113 @@ struct ContentView: View {
 
     @State private var isImporterPresented = false
 
+    @State var startDate: Date?
+
+    @State var footerOpacity: CGFloat = 0
+
+    @State var toastModel = ToastModel()
+    @State var toastMessage: String = ""
+
     var body: some View {
         VStack {
             if model.screenshot != nil {
                 VStack(spacing: 20) {
-                    deviceView
-                        .scaleEffect(isDoneBouncing ? 1.0 : 0.9)
-                    Text(model.device.name)
-                    Picker("", selection: $model.variant) {
-                        ForEach(model.device.variants, id: \.self) { variant in
-                            Text(variant)
+                    if let startDate {
+                        TimelineView(.animation) { context in
+                            deviceView
+                                .scaleEffect(isDoneBouncing ? 1.0 : 0.9)
+                                .visualEffect { content, proxy in
+                                    content
+                                        .colorEffect(removeEffect(
+                                            t: -startDate.timeIntervalSinceNow * 2,
+                                            size: proxy.size
+                                        ))
+                                }
+                        }
+                    } else {
+                        deviceView
+                            .scaleEffect(isDoneBouncing ? 1.0 : 0.9)
+                    }
+
+                    Picker(model.selectedDeviceAndVariant.device.name, selection: $model.selectedDeviceAndVariant) {
+                        ForEach(model.candidates, id: \.self) { section in
+                            Section(section[0].device.name) {
+                                ForEach(section, id: \.self) { candidate in
+                                    Text(candidate.variant)
+                                }
+                            }
                         }
                     }
                     .pickerStyle(.menu)
-                    .frame(maxWidth: 150)
-                    .onChange(of: model.variant) { _, _ in
-                        model.makeComposite()
+                    .frame(maxWidth: 260)
+                    .opacity(footerOpacity)
+                    .onChange(of: model.selectedDeviceAndVariant) { _, _ in
+                        try? model.makeComposite()
                     }
                 }
                 .padding(40)
+                .transition(.identity)
             } else {
-                VStack {
+                VStack(spacing: 16) {
+                    Image(systemName: "apps.iphone")
+                        .font(.system(size: 72))
                     Text("Drop iPhone screenshot here")
+                        .font(.title2)
                 }
+                .foregroundStyle(Color.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .dropDestination(for: NSImage.self) { items, _ in
-            if let image = items.first {
-                switch image.size {
-                case Device.iPhone16Pro.screenSize: break
-                case Device.iPhone16ProMax.screenSize: break
-                default: return false
+        .overlay(alignment: .top) {
+            HStack(alignment: .bottom) {
+                if toastModel.isShowingToast {
+                    Toast(toastMessage)
+                        .transition(.move(edge: .top))
+                        .padding(.top, 16)
                 }
-                model.loadScreenshot(image)
-                model.makeComposite()
-                bounce()
+            }
+        }
+        .dropDestination(for: NSImage.self) { items, _ in
+            guard let image = items.first else {
+                return false
+            }
+            do {
+                try model.loadScreenshot(image)
+                try model.makeComposite()
+            } catch AppError.unsupportedScreenshotSize {
+                toastMessage = "Unsupported screenshot size"
+                toastModel.showToast()
+                return false
+            } catch {
+                toastMessage = "Unexpected error"
+                toastModel.showToast()
+                return false
+            }
+            bounce()
+            withAnimation(.smooth) {
+                footerOpacity = 1
             }
             return true
         }
         .dropDestination(for: URL.self) { urls, _ in
             if let url = urls.first {
-                model.loadScreenshot(from: url)
-                model.makeComposite()
+                do {
+                    try model.loadScreenshot(from: url)
+                    try model.makeComposite()
+                } catch AppError.unsupportedScreenshotSize {
+                    toastMessage = "Unsupported screenshot size"
+                    toastModel.showToast()
+                    return false
+                } catch {
+                    toastMessage = "Unexpected error"
+                    toastModel.showToast()
+                    return false
+                }
                 bounce()
+                withAnimation(.smooth) {
+                    footerOpacity = 1
+                }
             }
             return true
         } isTargeted: { isTargeted in
@@ -64,8 +127,21 @@ struct ContentView: View {
         }
         .onOpenURL { url in
             if url.pathExtension == "png" {
-                model.loadScreenshot(from: url)
-                model.makeComposite()
+                do {
+                    try model.loadScreenshot(from: url)
+                    try model.makeComposite()
+                } catch AppError.unsupportedScreenshotSize {
+                    toastMessage = "Unsupported screenshot size"
+                    toastModel.showToast()
+                    return
+                } catch {
+                    toastMessage = "Unexpected error"
+                    toastModel.showToast()
+                    return
+                }
+                withAnimation(.smooth) {
+                    footerOpacity = 1
+                }
             }
         }
         .fileImporter(
@@ -76,9 +152,22 @@ struct ContentView: View {
             switch result {
             case .success(let urls):
                 if let url = urls.first {
-                    model.loadScreenshot(from: url, isSecurityScoped: true)
-                    model.makeComposite()
+                    do {
+                        try model.loadScreenshot(from: url, isSecurityScoped: true)
+                        try model.makeComposite()
+                    } catch AppError.unsupportedScreenshotSize {
+                        toastMessage = "Unsupported screenshot size"
+                        toastModel.showToast()
+                        return
+                    } catch {
+                        toastMessage = "Unexpected error"
+                        toastModel.showToast()
+                        return
+                    }
                     bounce()
+                    withAnimation(.smooth) {
+                        footerOpacity = 1
+                    }
                 }
             case .failure(let error):
                 dump(error)
@@ -94,7 +183,17 @@ struct ContentView: View {
             }
             ToolbarItem(placement: .automatic) {
                 Button {
-                    model.clear()
+                    Task {
+                        startDate = Date()
+                        withAnimation(.smooth) {
+                            footerOpacity = 0
+                        }
+                        try? await Task.sleep(for: .seconds(0.5))
+                        withAnimation {
+                            model.clear()
+                            startDate = nil
+                        }
+                    }
                 } label: {
                     Image(systemName: "trash")
                 }
@@ -119,7 +218,7 @@ struct ContentView: View {
                 .onDrag {
                     // Save the image temporarily to a file URL
                     let tempURL = FileManager.default.temporaryDirectory
-                        .appendingPathComponent("\(model.device.name).png")
+                        .appendingPathComponent("\(model.selectedDeviceAndVariant.device.name).png")
 
                     if let tiffData = compositedImage.tiffRepresentation,
                        let bitmap = NSBitmapImageRep(data: tiffData),
@@ -131,7 +230,7 @@ struct ContentView: View {
                         fatalError()
                     }
                     return provider.applying { provider in
-                        provider.suggestedName = "\(model.device.name) - \(model.variant)"
+                        provider.suggestedName = "\(model.selectedDeviceAndVariant.device.name) - \(model.selectedDeviceAndVariant.variant)"
                     }
                 }
         }
@@ -140,7 +239,7 @@ struct ContentView: View {
     func exportImage(_ image: NSImage) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.png]
-        panel.nameFieldStringValue = "\(model.device.name).png"
+        panel.nameFieldStringValue = "\(model.selectedDeviceAndVariant.device.name).png"
         panel.begin { response in
             if response == .OK, let url = panel.url {
                 if let tiffData = image.tiffRepresentation,
@@ -157,6 +256,14 @@ struct ContentView: View {
         withAnimation(.spring(response: 0.2, dampingFraction: 0.3)) {
             isDoneBouncing = true
         }
+    }
+
+    nonisolated
+    private func removeEffect(t: Double, size: CGSize) -> Shader {
+        ShaderLibrary.removeEffect(
+            .float(t),
+            .float2(size)
+        )
     }
 }
 
