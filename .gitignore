@@ -19,5 +19,8 @@ DerivedData/
 # It's not entirely uncommon that "build/" is used for build results
 build/
 
+# Sparkle release tools downloaded by scripts/build-and-notarize.sh
+Sparkle-tools/
+
 # Just in case the compiler still creates these files
 *.hmap

@@ -20,6 +20,8 @@ struct ContentView: View {
     @State var toastModel = ToastModel()
     @State var toastMessage: String = ""
 
+    // MARK: - Body
+
     var body: some View {
         VStack {
             if model.screenshot != nil {
@@ -71,6 +73,9 @@ struct ContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        // MARK: - Toast Overlay
+
         .overlay(alignment: .top) {
             HStack(alignment: .bottom) {
                 if toastModel.isShowingToast {
@@ -80,6 +85,9 @@ struct ContentView: View {
                 }
             }
         }
+
+        // MARK: - Drop Destination (NSImage)
+
         .dropDestination(for: NSImage.self) { items, _ in
             guard let image = items.first else {
                 return false
@@ -102,6 +110,9 @@ struct ContentView: View {
             }
             return true
         }
+
+        // MARK: - Drop Destination (URL)
+
         .dropDestination(for: URL.self) { urls, _ in
             if let url = urls.first {
                 do {
@@ -125,6 +136,9 @@ struct ContentView: View {
         } isTargeted: { isTargeted in
             //print("Is targeted: \(isTargeted)")
         }
+
+        // MARK: - On Open URL
+
         .onOpenURL { url in
             if url.pathExtension == "png" {
                 do {
@@ -144,14 +158,20 @@ struct ContentView: View {
                 }
             }
         }
+
+        // MARK: - File Importer
+
         .fileImporter(
             isPresented: $isImporterPresented,
-            allowedContentTypes: [.image],
+            allowedContentTypes: [.image, .movie, .mpeg4Movie],
             allowsMultipleSelection: false
         ) { result in
             switch result {
             case .success(let urls):
-                if let url = urls.first {
+                guard let url = urls.first else {
+                    return
+                }
+                if ["png", "jpg"].contains(url.pathExtension) {
                     do {
                         try model.loadScreenshot(from: url, isSecurityScoped: true)
                         try model.makeComposite()
@@ -168,11 +188,22 @@ struct ContentView: View {
                     withAnimation(.smooth) {
                         footerOpacity = 1
                     }
+                } else if ["mp4", "mov"].contains(url.pathExtension) {
+                    Task {
+                        do {
+                            try await model.makeVideo(from: url)
+                        } catch {
+                            dump(error)
+                        }
+                    }
                 }
             case .failure(let error):
                 dump(error)
             }
         }
+
+        // MARK: - Toolbar
+
         .toolbar {
             ToolbarItem(placement: .automatic) {
                 Button {
@@ -210,6 +241,8 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Device View
+
     @ViewBuilder var deviceView: some View {
         if let compositedImage = model.compositedImage {
             Image(nsImage: compositedImage)
@@ -236,6 +269,8 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Export Image
+
     func exportImage(_ image: NSImage) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.png]
@@ -251,12 +286,16 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Bounce
+
     private func bounce() {
         isDoneBouncing = false
         withAnimation(.spring(response: 0.2, dampingFraction: 0.3)) {
             isDoneBouncing = true
         }
     }
+
+    // MARK: - Remove Effect
 
     nonisolated
     private func removeEffect(t: Double, size: CGSize) -> Shader {
@@ -266,6 +305,8 @@ struct ContentView: View {
         )
     }
 }
+
+// MARK: - Preview
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {

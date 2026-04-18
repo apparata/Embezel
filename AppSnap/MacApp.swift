@@ -5,6 +5,7 @@
 import SwiftUI
 import SwiftUIToolbox
 import AttributionsUI
+import Sparkle
 
 @main
 struct MacApp: App {
@@ -12,14 +13,20 @@ struct MacApp: App {
     // swiftlint:disable:next weak_delegate
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    private let updaterController = SPUStandardUpdaterController(
+        startingUpdater: true,
+        updaterDelegate: nil,
+        userDriverDelegate: nil
+    )
+
     var body: some Scene {
-        MainWindow()
+        MainWindow(updater: updaterController.updater)
         MenuBarWindow()
         SettingsWindow()
         AboutWindow(developedBy: "Apparata AB",
                     attributionsWindowID: AttributionsWindow.windowID)
         AttributionsWindow([
-            ("<Placeholder>", .custom(text: "This is a placeholder attribution."))
+            ("Sparkle", .mit(year: "2006-2017", holder: "Andy Matuschak et al."))
         ], header: "The following software may be included in this product.")
         HelpWindow()
     }

@@ -5,6 +5,7 @@
 import SwiftUI
 import AppKit
 import CollectionKit
+import AVFoundation
 
 enum AppError: Error {
     case unsupportedScreenshotSize
@@ -165,4 +166,66 @@ struct DeviceAndVariant: Identifiable, Equatable, Hashable {
         pasteboard.clearContents()
         pasteboard.writeObjects([image])
     }
+
+    @MainActor
+    func makeVideo(from inputVideoURL: URL) async throws {
+
+        _ = inputVideoURL.startAccessingSecurityScopedResource()
+        defer { inputVideoURL.stopAccessingSecurityScopedResource() }
+
+        let videoSize = try await getVideoDimensions(from: inputVideoURL)
+
+        guard isSupportedScreenSize(videoSize) else {
+            throw AppError.unsupportedScreenshotSize
+        }
+
+        candidates = DeviceAndVariant.all.compactMap { group in
+            let filteredGroup = group.filter { deviceAndVariant in
+                videoSize == deviceAndVariant.device.screenSize
+            }
+            return filteredGroup.isEmpty ? nil : filteredGroup
+        }
+
+        if !candidates.flatMap({ $0 }).contains(selectedDeviceAndVariant) {
+            selectedDeviceAndVariant = candidates[0][0]
+        }
+
+        let device = selectedDeviceAndVariant.device
+
+        guard let image = device.images[selectedDeviceAndVariant.variant] else {
+            return
+        }
+
+        let outputURL = try await createFramedVideo(
+            originalVideoURL: inputVideoURL,
+            backgroundImage: image,
+            maskImage: device.mask,
+            outputURL: makeTemporaryOutputURL(),
+            videoOffset: CGPoint(x: device.maskOffset.width, y: device.maskOffset.height)
+        )
+
+        NSWorkspace().open(outputURL.deletingLastPathComponent())
+    }
+
+    private func makeTemporaryOutputURL(extension fileExtension: String = "mp4") -> URL {
+        let tempDirectory = FileManager.default.temporaryDirectory
+        let fileName = UUID().uuidString + "." + fileExtension
+        return tempDirectory.appendingPathComponent(fileName)
+    }
+
+    private func getVideoDimensions(from url: URL) async throws -> CGSize {
+        let asset = AVAsset(url: url)
+
+        // Wait until the asset is ready (in case it's loaded asynchronously)
+        let tracks = try await asset.loadTracks(withMediaType: .video)
+
+        // Get the first video track
+        guard let videoTrack = tracks.first else {
+            throw AppError.unsupportedScreenshotSize
+        }
+
+        let videoSize = try await videoTrack.load(.naturalSize)
+        return videoSize
+    }
+
 }

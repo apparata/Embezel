@@ -11,6 +11,8 @@
 		2E9236EECD77C48FB66F723D /* SwiftUIToolbox in Frameworks */ = {isa = PBXBuildFile; productRef = DC593BC6AEF383A6C548287F /* SwiftUIToolbox */; };
 		3423F0236D15F6CA4F82ACD8 /* Constructs in Frameworks */ = {isa = PBXBuildFile; productRef = C89651307770B232DADA52B4 /* Constructs */; };
 		3636672744367FD81696CFE8 /* CGMath in Frameworks */ = {isa = PBXBuildFile; productRef = DCC17B9B6D7EFE4BA29735BF /* CGMath */; };
+		414316472F94232D0077C20F /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 414316462F94232D0077C20F /* Sparkle */; };
+		4143169E2F9424BD0077C20F /* CheckForUpdatesCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4143169D2F9424BD0077C20F /* CheckForUpdatesCommand.swift */; };
 		41D6C31A2D943F46008A59B4 /* ContentModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D6C3192D943F46008A59B4 /* ContentModel.swift */; };
 		5218003D89EF2F67C116AEB2 /* AttributionsUI in Frameworks */ = {isa = PBXBuildFile; productRef = E6070C47C82B55C86E68E92F /* AttributionsUI */; };
 		62F5383A6379EBAD21FCC1DD /* MathKit in Frameworks */ = {isa = PBXBuildFile; productRef = 72E4AA14288C911528E4C8B6 /* MathKit */; };
@@ -24,6 +26,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4143169D2F9424BD0077C20F /* CheckForUpdatesCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesCommand.swift; sourceTree = "<group>"; };
 		41D6C3192D943F46008A59B4 /* ContentModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentModel.swift; sourceTree = "<group>"; };
 		41D6C33E2D94521F008A59B4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		70FB4550D5A7CEA3C8DA15A3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -63,6 +66,7 @@
 		41D6C30E2D941E38008A59B4 /* Device */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Device; sourceTree = "<group>"; };
 		41D6C7E42D9DB79B008A59B4 /* Effects */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (41D6C7E72D9DB7B9008A59B4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 41D6C7E82D9DB7B9008A59B4 /* PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Effects; sourceTree = "<group>"; };
 		41D6C7EF2DA2F0B0008A59B4 /* Toast */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Toast; sourceTree = "<group>"; };
+		41D6C7F22DA99C68008A59B4 /* Video Creation */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "Video Creation"; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +81,7 @@
 				9AE1E6E63551C7FB074050CD /* Markin in Frameworks */,
 				62F5383A6379EBAD21FCC1DD /* MathKit in Frameworks */,
 				909278096B6CB55326F4543C /* SensibleStyling in Frameworks */,
+				414316472F94232D0077C20F /* Sparkle in Frameworks */,
 				2E9236EECD77C48FB66F723D /* SwiftUIToolbox in Frameworks */,
 				69D3E64161FA7403F3465076 /* SystemKit in Frameworks */,
 				F7149630989B2A0309F46B6C /* TextToolbox in Frameworks */,
@@ -89,6 +94,7 @@
 		4FB7163564D96346425362C7 /* AppSnap */ = {
 			isa = PBXGroup;
 			children = (
+				41D6C7F22DA99C68008A59B4 /* Video Creation */,
 				41D6C7EF2DA2F0B0008A59B4 /* Toast */,
 				41D6C7E42D9DB79B008A59B4 /* Effects */,
 				41D6C30E2D941E38008A59B4 /* Device */,
@@ -100,6 +106,7 @@
 				41D6C2FC2D9410F9008A59B4 /* Settings */,
 				41D6C3072D941104008A59B4 /* Utilities */,
 				CABC760C742C41AAD9441A73 /* Assets.xcassets */,
+				4143169D2F9424BD0077C20F /* CheckForUpdatesCommand.swift */,
 				70FB4550D5A7CEA3C8DA15A3 /* ContentView.swift */,
 				41D6C3192D943F46008A59B4 /* ContentModel.swift */,
 				71B2A8E3592C1FCA4D1C682E /* MacApp.swift */,
@@ -154,6 +161,7 @@
 				41D6C30E2D941E38008A59B4 /* Device */,
 				41D6C7E42D9DB79B008A59B4 /* Effects */,
 				41D6C7EF2DA2F0B0008A59B4 /* Toast */,
+				41D6C7F22DA99C68008A59B4 /* Video Creation */,
 			);
 			name = AppSnap;
 			packageProductDependencies = (
@@ -167,6 +175,7 @@
 				DC593BC6AEF383A6C548287F /* SwiftUIToolbox */,
 				FE0F897694EE3B66C1824E13 /* SystemKit */,
 				C86348429FCE2163DCD2FE62 /* TextToolbox */,
+				414316462F94232D0077C20F /* Sparkle */,
 			);
 			productName = AppSnap;
 			productReference = D464FD8B3999741D94CE4CE8 /* Embezel.app */;
@@ -179,7 +188,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 2640;
 				ORGANIZATIONNAME = "Apparata AB";
 			};
 			buildConfigurationList = 9CF644BC4ACCBA18D00CF3A9 /* Build configuration list for PBXProject "AppSnap" */;
@@ -201,6 +210,7 @@
 				05F2B7310A438379886630DD /* XCRemoteSwiftPackageReference "SwiftUIToolbox" */,
 				484E7C383B3195318EF30F97 /* XCRemoteSwiftPackageReference "SystemKit" */,
 				4BF44F8C44F5ED38FFFD0378 /* XCRemoteSwiftPackageReference "TextToolbox" */,
+				414316452F94232D0077C20F /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 56;
 			projectDirPath = "";
@@ -251,6 +261,7 @@
 			files = (
 				1C1CE25F591338C9811B3DC7 /* ContentView.swift in Sources */,
 				80EA0ACDDFB33B3B08D6B4B2 /* MacApp.swift in Sources */,
+				4143169E2F9424BD0077C20F /* CheckForUpdatesCommand.swift in Sources */,
 				41D6C31A2D943F46008A59B4 /* ContentModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -331,13 +342,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = AppSnap/AppSnap.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"AppSnap/Preview Content\"";
-				DEVELOPMENT_TEAM = DR5YAK7GKS;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = DR5YAK7GKS;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_BITCODE = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -424,13 +437,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = AppSnap/AppSnap.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"AppSnap/Preview Content\"";
-				DEVELOPMENT_TEAM = DR5YAK7GKS;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_BITCODE = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -499,6 +513,14 @@
 				version = 0.2.2;
 			};
 		};
+		414316452F94232D0077C20F /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.9.1;
+			};
+		};
 		484E7C383B3195318EF30F97 /* XCRemoteSwiftPackageReference "SystemKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apparata/SystemKit.git";
@@ -562,6 +584,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FA805E6339222A05B2BC3881 /* XCRemoteSwiftPackageReference "Markin" */;
 			productName = Markin;
+		};
+		414316462F94232D0077C20F /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 414316452F94232D0077C20F /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 		72E4AA14288C911528E4C8B6 /* MathKit */ = {
 			isa = XCSwiftPackageProductDependency;
