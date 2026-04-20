@@ -142,7 +142,6 @@
 			buildConfigurationList = 158FD3C6016835DC171A5E2A /* Build configuration list for PBXNativeTarget "AppSnap" */;
 			buildPhases = (
 				5E6463B95B69D70DDF319948 /* Sources */,
-				9626A08405213AE44D8D022E /* Swift Lint */,
 				7C8416878FB536F37E840C31 /* Resources */,
 				360EFE9A84CBAD3B1D36719E /* Frameworks */,
 			);
@@ -231,28 +230,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		9626A08405213AE44D8D022E /* Swift Lint */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Swift Lint";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if which mint >/dev/null; then\n    /usr/bin/xcrun --sdk macosx mint run swiftlint lint --config \"${PROJECT_DIR}/.swiftlint.yml\"\nfi\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		5E6463B95B69D70DDF319948 /* Sources */ = {

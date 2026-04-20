@@ -73,10 +73,11 @@ struct DeviceAndVariant: Identifiable, Equatable, Hashable {
     }
 
     func loadScreenshot(_ image: NSImage) throws {
-        guard isSupportedScreenSize(image.size) else {
+        let normalizedImage = normalizeImageSizeTo1x(image)
+        guard isSupportedScreenSize(normalizedImage.size) else {
             throw AppError.unsupportedScreenshotSize
         }
-        screenshot = image
+        screenshot = normalizedImage
     }
 
     func loadScreenshot(from url: URL, isSecurityScoped: Bool = false) throws {
@@ -97,11 +98,13 @@ struct DeviceAndVariant: Identifiable, Equatable, Hashable {
                 return
             }
 
-            guard isSupportedScreenSize(screenshot.size) else {
+            let normalizedScreenshot = normalizeImageSizeTo1x(screenshot)
+
+            guard isSupportedScreenSize(normalizedScreenshot.size) else {
                 throw AppError.unsupportedScreenshotSize
             }
 
-            self.screenshot = screenshot
+            self.screenshot = normalizedScreenshot
         } else {
             guard let screenshot = NSImage(contentsOf: url) else {
                 print("Could not load image at \(url.absoluteString)")
@@ -110,12 +113,28 @@ struct DeviceAndVariant: Identifiable, Equatable, Hashable {
                 return
             }
 
-            guard isSupportedScreenSize(screenshot.size) else {
+            let normalizedScreenshot = normalizeImageSizeTo1x(screenshot)
+
+            guard isSupportedScreenSize(normalizedScreenshot.size) else {
                 throw AppError.unsupportedScreenshotSize
             }
 
-            self.screenshot = screenshot
+            self.screenshot = normalizedScreenshot
         }
+    }
+
+    private func normalizeImageSizeTo1x(_ image: NSImage) -> NSImage {
+
+        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            return image
+        }
+
+        let newImage = NSImage(
+            cgImage: cgImage,
+            size: NSSize(width: cgImage.width, height: cgImage.height)
+        )
+
+        return newImage
     }
 
     func makeComposite() throws {
