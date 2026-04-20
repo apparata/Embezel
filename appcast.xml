@@ -3,6 +3,15 @@
     <channel>
         <title>Embezel</title>
         <item>
+            <title>1.2.0</title>
+            <pubDate>Mon, 20 Apr 2026 18:18:51 +0200</pubDate>
+            <sparkle:version>1.2.0</sparkle:version>
+            <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/apparata/Embezel/releases/download/1.2.0/Embezel-1.2.0.dmg" length="17283644" type="application/octet-stream" sparkle:edSignature="iReD2HlaOucZK/kh1M/M4u+U6O2nAr9bioeE3LxnqKVu1QCUXop6AP6BQAhFe0eAy9vIlMhrfkgrIxgLSUjbCQ=="/>
+        </item>
+        <item>
             <title>1.1.0</title>
             <pubDate>Sat, 18 Apr 2026 22:51:37 +0200</pubDate>
             <sparkle:version>1</sparkle:version>
