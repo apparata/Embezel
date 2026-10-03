@@ -56,7 +56,7 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(WindowReflection(window: $window))
         .onChange(of: window) {
-            resizeWindowIfNeeded()
+            deferResize()
         }
         // Open files in this window instead of creating a new one.
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
@@ -182,7 +182,7 @@ struct ContentView: View {
             proxy.size
         } action: { size in
             previewAreaSize = size
-            resizeWindowIfNeeded()
+            deferResize()
         }
     }
 
@@ -311,12 +311,24 @@ struct ContentView: View {
     /// the toolbar buttons overflow into a menu.
     static let minimumSize = CGSize(width: 400, height: 360)
 
-    /// Resizes the window on the next run loop pass, after SwiftUI has laid
-    /// out the controls for the new composite.
     private func scheduleResize(toFit size: CGSize?) {
         pendingResize = size
-        DispatchQueue.main.async {
-            resizeWindowIfNeeded()
+        deferResize()
+    }
+
+    /// Resizes the window later, outside of SwiftUI's update and layout
+    /// passes. Only the default run loop mode is used, so a click on a
+    /// control (which runs a mouse tracking loop) has finished first.
+    /// Resizing the window while SwiftUI renders makes NSHostingView lay
+    /// out reentrantly, which it skips.
+    private func deferResize() {
+        guard pendingResize != nil else {
+            return
+        }
+        RunLoop.main.perform(inModes: [.default]) {
+            MainActor.assumeIsolated {
+                resizeWindowIfNeeded()
+            }
         }
     }
 
@@ -390,7 +402,12 @@ struct ContentView: View {
             frame.origin.x = min(max(frame.minX, visible.minX), visible.maxX - frame.width)
             frame.origin.y = min(max(frame.minY, visible.minY), visible.maxY - frame.height)
         }
-        window.setFrame(frame, display: true, animate: true)
+        // Animate through the animator proxy; setFrame(_:display:animate:)
+        // runs a blocking animation loop that lays out SwiftUI reentrantly.
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            window.animator().setFrame(frame, display: true)
+        }
     }
 
     // MARK: - Bounce
