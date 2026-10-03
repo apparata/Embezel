@@ -162,12 +162,15 @@ struct ContentView: View {
         Group {
             if let startDate {
                 TimelineView(.animation) { context in
+                    // Derive time from the timeline's date. The content has
+                    // to depend on it, or SwiftUI doesn't redraw on each tick.
+                    let t = context.date.timeIntervalSince(startDate) * 2
                     deviceView
                         .scaleEffect(isDoneBouncing ? 1.0 : 0.9)
                         .visualEffect { content, proxy in
                             content
                                 .colorEffect(removeEffect(
-                                    t: -startDate.timeIntervalSinceNow * 2,
+                                    t: t,
                                     size: proxy.size
                                 ))
                         }
