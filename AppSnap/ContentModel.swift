@@ -4,123 +4,138 @@
 
 import SwiftUI
 import AppKit
-import CollectionKit
-import AVFoundation
 
 enum AppError: Error {
     case unsupportedScreenshotSize
-}
+    case droppedDevice(String)
+    case unsupportedFile
 
-struct DeviceAndVariant: Identifiable, Equatable, Hashable {
-
-    let device: Device
-    let variant: String
-
-    var description: String {
-        device.name + " - " + variant
-    }
-
-    var id: String {
-        description
-    }
-
-    static var all: [[DeviceAndVariant]] {
-        Device.all.map { device in
-            device.variants.map { variant in
-                DeviceAndVariant(device: device, variant: variant)
-            }
+    var message: String {
+        switch self {
+        case .unsupportedScreenshotSize:
+            "Unsupported screenshot size"
+        case .droppedDevice(let device):
+            "\(device) screenshots are no longer supported"
+        case .unsupportedFile:
+            "Unsupported file"
         }
     }
+}
 
-    static func == (lhs: DeviceAndVariant, rhs: DeviceAndVariant) -> Bool {
-        lhs.device.name == rhs.device.name && lhs.variant == rhs.variant
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(description)
-    }
+/// A model and color, as chosen in the picker.
+struct ModelColor: Hashable {
+    let model: String
+    let color: String
 }
 
 @MainActor @Observable class ContentModel {
 
     var screenshot: NSImage?
 
-    var candidates: [[DeviceAndVariant]] = []
-    var selectedDeviceAndVariant = DeviceAndVariant(
-        device: .iPhone16Pro,
-        variant: Device.iPhone16Pro.variants[0]
-    )
+    /// Bezels that fit the current screenshot, in catalog order.
+    private(set) var candidates: [Bezel] = []
+
+    private(set) var selection: Selection?
 
     var compositedImage: NSImage?
 
+    @ObservationIgnored private var screenshotImage: CGImage?
+    @ObservationIgnored private var bezelImages: [String: CGImage] = [:]
+    @ObservationIgnored private var screenMasks: [String: CGImage] = [:]
+
+    /// Sizes that only 1.x devices had, so a clearer message can be shown.
+    private static let droppedDevices: [(portraitSize: CGSize, name: String)] = [
+        (CGSize(width: 1170, height: 2532), "iPhone 14"),
+        (CGSize(width: 1284, height: 2778), "iPhone 14 Plus")
+    ]
+
     func clear() {
         screenshot = nil
-        selectedDeviceAndVariant = DeviceAndVariant(
-            device: .iPhone16Pro,
-            variant: Device.iPhone16Pro.variants[0]
-        )
+        screenshotImage = nil
         candidates = []
+        selection = nil
         compositedImage = nil
     }
 
-    func isSupportedScreenSize(_ size: CGSize) -> Bool {
-        for device in Device.all {
-            if size.equalTo(device.screenSize) {
-                return true
-            }
-        }
-        return false
+    // MARK: - Picker Support
+
+    /// Models that fit the current screenshot, newest first.
+    var models: [String] {
+        candidates.map(\.model).uniqued()
     }
 
-    func loadScreenshot(_ image: NSImage) throws {
-        let normalizedImage = normalizeImageSizeTo1x(image)
-        guard isSupportedScreenSize(normalizedImage.size) else {
-            throw AppError.unsupportedScreenshotSize
+    func colors(for model: String) -> [String] {
+        candidates.filter { $0.model == model }.map(\.color).uniqued()
+    }
+
+    /// Poses of the selected model and color that fit the screenshot.
+    var poses: [Pose] {
+        guard let bezel = selection?.bezel else {
+            return []
         }
-        screenshot = normalizedImage
+        return candidates
+            .filter { $0.model == bezel.model && $0.color == bezel.color }
+            .map(\.pose)
+    }
+
+    var selectedModelColor: ModelColor? {
+        selection.map { ModelColor(model: $0.bezel.model, color: $0.bezel.color) }
+    }
+
+    func select(_ modelColor: ModelColor) {
+        let matching = candidates.filter { $0.model == modelColor.model && $0.color == modelColor.color }
+        guard let bezel = matching.first(where: { $0.pose == selection?.bezel.pose }) ?? matching.first else {
+            return
+        }
+        select(Selection(bezel: bezel, isRotated180: selection?.isRotated180 ?? false))
+    }
+
+    func select(_ pose: Pose) {
+        guard let current = selection?.bezel, let bezel = candidates.first(where: {
+            $0.model == current.model && $0.color == current.color && $0.pose == pose
+        }) else {
+            return
+        }
+        select(Selection(bezel: bezel, isRotated180: selection?.isRotated180 ?? false))
+    }
+
+    func toggleRotation() {
+        guard let selection, selection.bezel.pose.isLandscape else {
+            return
+        }
+        select(Selection(bezel: selection.bezel, isRotated180: !selection.isRotated180))
+    }
+
+    private func select(_ selection: Selection) {
+        self.selection = selection
+        makeComposite()
+    }
+
+    // MARK: - Loading
+
+    func loadScreenshot(_ image: NSImage) throws {
+        try setScreenshot(normalizeImageSizeTo1x(image))
     }
 
     func loadScreenshot(from url: URL, isSecurityScoped: Bool = false) throws {
         if isSecurityScoped {
             guard url.startAccessingSecurityScopedResource() else {
                 print("Couldn't access security-scoped resource.")
-                screenshot = nil
-                compositedImage = nil
-                return
+                throw AppError.unsupportedFile
             }
-
-            defer { url.stopAccessingSecurityScopedResource() }
-
-            guard let screenshot = NSImage(contentsOf: url) else {
-                print("Could not load image at \(url.absoluteString)")
-                screenshot = nil
-                compositedImage = nil
-                return
-            }
-
-            let normalizedScreenshot = normalizeImageSizeTo1x(screenshot)
-
-            guard isSupportedScreenSize(normalizedScreenshot.size) else {
-                throw AppError.unsupportedScreenshotSize
-            }
-
-            self.screenshot = normalizedScreenshot
-        } else {
-            guard let screenshot = NSImage(contentsOf: url) else {
-                print("Could not load image at \(url.absoluteString)")
-                screenshot = nil
-                compositedImage = nil
-                return
-            }
-
-            let normalizedScreenshot = normalizeImageSizeTo1x(screenshot)
-
-            guard isSupportedScreenSize(normalizedScreenshot.size) else {
-                throw AppError.unsupportedScreenshotSize
-            }
-
-            self.screenshot = normalizedScreenshot
         }
+        defer {
+            if isSecurityScoped {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        guard let image = NSImage(contentsOf: url) else {
+            print("Could not load image at \(url.absoluteString)")
+            throw AppError.unsupportedFile
+        }
+
+        try setScreenshot(normalizeImageSizeTo1x(image))
     }
 
     private func normalizeImageSizeTo1x(_ image: NSImage) -> NSImage {
@@ -137,47 +152,76 @@ struct DeviceAndVariant: Identifiable, Equatable, Hashable {
         return newImage
     }
 
-    func makeComposite() throws {
-        guard let screenshot else {
-            return
+    /// Picks the default bezel for a new screenshot: the first match in
+    /// catalog order is the newest model, its alphabetically first color,
+    /// and its first pose (Closed before Open for the Duo outer display).
+    private func setScreenshot(_ image: NSImage) throws {
+        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            throw AppError.unsupportedFile
         }
+        let size = CGSize(width: cgImage.width, height: cgImage.height)
+        let matches = BezelCatalog.all.filter { $0.screenshotSize == size }
 
-        guard isSupportedScreenSize(screenshot.size) else {
+        guard let bezel = matches.first else {
+            let portraitSize = size.width > size.height ? CGSize(width: size.height, height: size.width) : size
+            if let device = Self.droppedDevices.first(where: { $0.portraitSize == portraitSize }) {
+                throw AppError.droppedDevice(device.name)
+            }
             throw AppError.unsupportedScreenshotSize
         }
 
-        candidates = DeviceAndVariant.all.compactMap { group in
-            let filteredGroup = group.filter { deviceAndVariant in
-                screenshot.size == deviceAndVariant.device.screenSize
-            }
-            return filteredGroup.isEmpty ? nil : filteredGroup
-        }
+        screenshot = image
+        screenshotImage = cgImage
+        candidates = matches
+        let isRotated180 = bezel.pose.isLandscape && RotationDetector.detect(cgImage) == .rotated180
+        select(Selection(bezel: bezel, isRotated180: isRotated180))
+    }
 
-        if !candidates.flatMap({ $0 }).contains(selectedDeviceAndVariant) {
-            selectedDeviceAndVariant = candidates[0][0]
-        }
+    // MARK: - Compositing
 
-        let device = selectedDeviceAndVariant.device
-
-        guard let image = device.images[selectedDeviceAndVariant.variant] else {
+    private func makeComposite() {
+        guard let screenshotImage, let selection,
+              let bezelImage = bezelImage(for: selection.bezel),
+              let screenMask = screenMask(for: selection.bezel, bezelImage: bezelImage),
+              let image = BezelRenderer.render(
+                screenshot: screenshotImage,
+                bezelImage: bezelImage,
+                screenMask: screenMask,
+                selection: selection
+              ) else {
             compositedImage = nil
             return
         }
 
-        let content = Image(nsImage: image)
-            .overlay(alignment: .topLeading) {
-                Image(nsImage: screenshot)
-                    .mask(
-                        Image(nsImage: device.mask)
-                    )
-                    .offset(device.maskOffset)
-            }
+        let composite = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+        compositedImage = composite
+        copyImageToPasteboard(composite)
+    }
 
-        compositedImage = ImageRenderer(content: content).nsImage
-
-        if let compositedImage {
-            copyImageToPasteboard(compositedImage)
+    /// Loads the bezel at its full pixel size. The PNGs are tagged 216 dpi,
+    /// so the image's point size must not be used for geometry.
+    private func bezelImage(for bezel: Bezel) -> CGImage? {
+        if let image = bezelImages[bezel.imageName] {
+            return image
         }
+        var rect = CGRect(origin: .zero, size: bezel.canvasSize)
+        guard let image = NSImage(named: bezel.imageName)?.cgImage(forProposedRect: &rect, context: nil, hints: nil),
+              image.width == Int(bezel.canvasSize.width),
+              image.height == Int(bezel.canvasSize.height) else {
+            print("Could not load bezel image \(bezel.imageName)")
+            return nil
+        }
+        bezelImages[bezel.imageName] = image
+        return image
+    }
+
+    private func screenMask(for bezel: Bezel, bezelImage: CGImage) -> CGImage? {
+        if let mask = screenMasks[bezel.imageName] {
+            return mask
+        }
+        let mask = BezelRenderer.makeScreenMask(bezelImage: bezelImage, bezel: bezel)
+        screenMasks[bezel.imageName] = mask
+        return mask
     }
 
     func copyImageToPasteboard(_ image: NSImage) {
@@ -185,66 +229,13 @@ struct DeviceAndVariant: Identifiable, Equatable, Hashable {
         pasteboard.clearContents()
         pasteboard.writeObjects([image])
     }
+}
 
-    @MainActor
-    func makeVideo(from inputVideoURL: URL) async throws {
+// MARK: - Helpers
 
-        _ = inputVideoURL.startAccessingSecurityScopedResource()
-        defer { inputVideoURL.stopAccessingSecurityScopedResource() }
-
-        let videoSize = try await getVideoDimensions(from: inputVideoURL)
-
-        guard isSupportedScreenSize(videoSize) else {
-            throw AppError.unsupportedScreenshotSize
-        }
-
-        candidates = DeviceAndVariant.all.compactMap { group in
-            let filteredGroup = group.filter { deviceAndVariant in
-                videoSize == deviceAndVariant.device.screenSize
-            }
-            return filteredGroup.isEmpty ? nil : filteredGroup
-        }
-
-        if !candidates.flatMap({ $0 }).contains(selectedDeviceAndVariant) {
-            selectedDeviceAndVariant = candidates[0][0]
-        }
-
-        let device = selectedDeviceAndVariant.device
-
-        guard let image = device.images[selectedDeviceAndVariant.variant] else {
-            return
-        }
-
-        let outputURL = try await createFramedVideo(
-            originalVideoURL: inputVideoURL,
-            backgroundImage: image,
-            maskImage: device.mask,
-            outputURL: makeTemporaryOutputURL(),
-            videoOffset: CGPoint(x: device.maskOffset.width, y: device.maskOffset.height)
-        )
-
-        NSWorkspace().open(outputURL.deletingLastPathComponent())
+private extension Array where Element: Hashable {
+    func uniqued() -> [Element] {
+        var seen: Set<Element> = []
+        return filter { seen.insert($0).inserted }
     }
-
-    private func makeTemporaryOutputURL(extension fileExtension: String = "mp4") -> URL {
-        let tempDirectory = FileManager.default.temporaryDirectory
-        let fileName = UUID().uuidString + "." + fileExtension
-        return tempDirectory.appendingPathComponent(fileName)
-    }
-
-    private func getVideoDimensions(from url: URL) async throws -> CGSize {
-        let asset = AVAsset(url: url)
-
-        // Wait until the asset is ready (in case it's loaded asynchronously)
-        let tracks = try await asset.loadTracks(withMediaType: .video)
-
-        // Get the first video track
-        guard let videoTrack = tracks.first else {
-            throw AppError.unsupportedScreenshotSize
-        }
-
-        let videoSize = try await videoTrack.load(.naturalSize)
-        return videoSize
-    }
-
 }

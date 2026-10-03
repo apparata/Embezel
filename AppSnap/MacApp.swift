@@ -21,14 +21,11 @@ struct MacApp: App {
 
     var body: some Scene {
         MainWindow(updater: updaterController.updater)
-        MenuBarWindow()
-        SettingsWindow()
         AboutWindow(developedBy: "Apparata AB",
                     attributionsWindowID: AttributionsWindow.windowID)
         AttributionsWindow([
             ("Sparkle", .mit(year: "2006-2017", holder: "Andy Matuschak et al."))
         ], header: "The following software may be included in this product.")
-        HelpWindow()
     }
 }
 

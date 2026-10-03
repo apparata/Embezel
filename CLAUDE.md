@@ -4,7 +4,9 @@ Embezel is a SwiftUI macOS app (macOS 14+, Swift 5.10, arm64 releases) that
 composites an iPhone screenshot into a photorealistic device bezel image. The
 user drops a screenshot, the app detects which devices match its pixel size,
 the user picks a color variant, and the framed PNG can be dragged out,
-exported, or is copied to the clipboard automatically.
+exported, or is copied to the clipboard automatically. Supported devices are
+the iPhone 16, 17 (including Air), 18 Pro/Pro Max and Duo families, in portrait
+and landscape, and in every Duo pose.
 
 ## Naming
 
@@ -22,86 +24,104 @@ xcodebuild -project AppSnap.xcodeproj -scheme "AppSnap (Debug)" -destination 'pl
 ```
 
 - There are no tests and no test target.
-- The Xcode project is the source of truth and is edited directly.
-  `XcodeProject.yml` (XcodeGen) is stale and being removed; it doesn't even
-  list Sparkle.
+- The Xcode project is the source of truth and is edited directly. Most
+  folders under `AppSnap/` are synchronized folders
+  (`PBXFileSystemSynchronizedRootGroup`): new files in them are picked up
+  automatically, but adding or removing a whole folder needs a
+  `project.pbxproj` edit.
 - `.swiftlint.yml` is an opt-in rule list (`only_rules`) with custom naming
   rules (`setUp`/`shutDown`/`logIn`/`logOut`, no `vc`). No build phase runs
   SwiftLint; run it manually with `mint run swiftlint` (see `Mintfile`) if
   needed. `force_unwrapping` and `force_try` are enabled, so use
   `// swiftlint:disable:next` when a force unwrap is intentional.
-- Dependencies are SPM packages: Sparkle plus several of Apparata's own
-  packages (`SwiftUIToolbox` supplies `AboutWindow`/`AboutCommand`,
-  `AttributionsUI`, `CGMath` for `CGSize`/`CGPoint` operators,
-  `CollectionKit`, `Constructs`, and others). Versions are pinned in
+- Dependencies are SPM packages: Sparkle, `SwiftUIToolbox` (`AboutWindow`,
+  `AboutCommand`), `AttributionsUI` and `Constructs` (`.applying`). Versions
+  are pinned in
   `AppSnap.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`.
 
 ## Architecture
 
-All the real logic lives in three files:
+### Bezels and geometry
 
-- `AppSnap/Device/Device.swift`: the static device catalog. Each `Device` has
-  a name, a `[variantName: NSImage]` bezel image map, a screen `mask` image,
-  a `maskOffset` (top-left position of the screen inside the bezel image), and
-  the native `screenSize` in pixels. `Device.all` sets the order of the
-  picker sections.
+- `AppSnap/Device/Bezel.swift`: `Bezel` (model, color, `Pose`, image name,
+  canvas size, screen rectangle) and `Selection` (a bezel plus an optional
+  180° rotation, which only applies to landscape poses). All geometry is in
+  pixels with a **top-left origin**, as in the source PSDs. A screenshot fits
+  a bezel when its pixel size equals `screenRect.size`; screenshots are always
+  placed 1:1, never scaled.
+- `AppSnap/Device/BezelCatalog.swift`: **generated, don't edit**. It is the
+  committed record of every bezel's geometry, in model order (newest first),
+  then color (alphabetical), then pose.
+- `AppSnap/Assets.xcassets/Bezels/`: **generated**. The source PNGs, copied
+  unchanged, one imageset per PNG named after the file. Loaded by name; the
+  PNGs are tagged 216 dpi, so always use pixel sizes, never `NSImage.size`.
+- `AppSnap/Device/BezelRenderer.swift`: pure Core Graphics. The screenshot is
+  drawn **under** the bezel. The bezel PNG has a transparent screen hole with
+  the Dynamic Island drawn opaque, so the bezel does most of the clipping.
+  The screen rectangle's corners stick out past the phone's rounded outer
+  corners, though, so the screenshot is also clipped by a screen mask that
+  `makeScreenMask` computes from the bezel's alpha. It flood-fills the
+  non-opaque pixels reachable from the canvas border ("outside the phone").
+  Output keeps the screenshot's color space (usually Display P3).
+- `AppSnap/Device/RotationDetector.swift`: **experimental** guess at which side
+  the Dynamic Island was on in a landscape screenshot. Screenshots contain no
+  island pixels and landscape safe areas are symmetric, so it only answers when
+  one edge strip is a flat color and the other has content. Otherwise it
+  returns `.unknown`, which falls back to the bezel as shipped (island on the
+  left). It is untuned; the rotate button is always available.
+
+### App
+
 - `AppSnap/ContentModel.swift`: an `@MainActor @Observable` model.
-  - `loadScreenshot` turns the image into a 1x `NSImage` whose point size
-    equals its pixel size (`normalizeImageSizeTo1x`), then rejects it with
-    `AppError.unsupportedScreenshotSize` unless it exactly matches some
-    device's `screenSize`. Retina-scaled images would fail the match without
-    this step (commit 968d7a3 fixed that).
-  - `makeComposite` builds `candidates` (every device and variant with a
-    matching screen size, grouped by device), keeps the current selection if
-    it's still valid or falls back to the first candidate, then renders the
-    bezel image with the screenshot overlaid at `maskOffset` and masked by
-    `device.mask` using SwiftUI `ImageRenderer`. It then copies the result to
-    the pasteboard.
-  - `makeVideo` does the same for `.mp4`/`.mov` screen recordings via
-    `AppSnap/Video Creation/FramedVideo.swift` (AVFoundation and a
-    Core Animation layer composition at 0.5x scale, exported as HEVC). The
-    output goes to a temp file and the folder opens in Finder. Video is only
-    reachable through the file importer, and the README doesn't mention it.
+  - `loadScreenshot` normalizes the image to 1x (point size = pixel size; see
+    commit 968d7a3), then finds `candidates`: all bezels with a matching
+    screenshot size. Errors are `AppError` with a user-facing `message`. iPhone
+    14 and 14 Plus sizes get a "no longer supported" message.
+  - The default selection is the first candidate in catalog order: newest
+    model, first color, first pose (Duo outer portrait defaults to Closed
+    rather than Open). Rotation comes from `RotationDetector`. Nothing is
+    remembered between screenshots.
+  - Every composite, including each picker, pose or rotation change, is
+    copied to the pasteboard. Bezel images and screen masks are cached by
+    image name.
 - `AppSnap/ContentView.swift`: the single main view. Inputs are drag and drop
-  (`NSImage` and `URL`), `onOpenURL`, and `.fileImporter`. File-importer
-  URLs are security-scoped (`isSecurityScoped: true`). The toolbar has open,
-  clear (plays the Metal dissolve shader `removeEffect` in
-  `AppSnap/Effects/RemoveEffect.metal`), and export-to-PNG. Errors show up as
-  a `Toast`.
+  (`NSImage` and `URL`), `onOpenURL` (files opened in Finder go to the
+  existing window via `handlesExternalEvents`), and `.fileImporter` (PNG and
+  JPEG, security-scoped URLs). Below the preview: a model + color picker, a
+  pose segmented control (only when several poses fit), and a rotate button
+  (landscape only). The toolbar has open, clear (plays the Metal dissolve
+  shader `removeEffect` in `AppSnap/Effects/RemoveEffect.metal`), and export
+  to PNG. When the composite's aspect changes, the window resizes to fit it,
+  keeping its content area and center (`resizeWindowIfNeeded`, using the
+  window from `WindowReflection`). The minimum width is 400 pt, because
+  narrower windows push toolbar buttons into an overflow menu.
 
-Scenes are registered in `AppSnap/MacApp.swift`: the main window, menu bar
-extra, settings, about, attributions, and help. Sparkle's
-`SPUStandardUpdaterController` lives there too and feeds
-`CheckForUpdatesCommand`.
-
-### Template leftovers
-
-The project started from an app template, and several files are still
-placeholders that do nothing useful: `MenuBarPopup` ("Hello, World!"),
-`MyCommands` (a "My Commands" menu with print-only Build/Do Stuff items bound
-to ⌘B/⌘D), `GeneralSettingsTab`, `HelpWindow` ("No help available."),
-`RemoveEffectView` (a shader demo), and the unused `WindowReflection` /
-`NSWindow+AlwaysOnTop` helpers. Don't assume these are intentional features.
+Scenes are registered in `AppSnap/MacApp.swift`: the main window, about and
+attributions. Sparkle's `SPUStandardUpdaterController` lives there too and
+feeds `CheckForUpdatesCommand`. `RemoveEffectView` (a shader demo) and
+`NSWindow+AlwaysOnTop` are unused leftovers from the app template.
 
 ## Adding a new device
 
-1. In `AppSnap/Assets.xcassets/Device/`, add a folder named after the device
-   (e.g. `iPhone 17 Pro`) with **Provides Namespace** enabled. Inside it, add
-   one imageset per color variant plus a `Mask` imageset. All images are
-   single-scale (`universal`, 1x).
-2. The mask PNG must be exactly the device's screen size in pixels. It has an
-   alpha channel, and opaque pixels mark the visible screen area (SwiftUI
-   `.mask` uses alpha), including rounded corners and the Dynamic Island
-   cutout.
-3. Xcode generates asset symbols (`ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS`),
-   so images are referenced as `.Device.IPhone17Pro.blackTitanium`,
-   `.Device.IPhone17Pro.mask`, and so on.
-4. Add a `static let` in `Device.swift` and include it in `Device.all`. Find
-   `maskOffset` by aligning the mask inside the bezel image. These values are
-   hand-tuned per device and are not always symmetric.
-5. Devices that share a `screenSize` all show up as candidates for the same
-   screenshot. That's intended; the user picks the right one.
-6. Update the supported-devices list in `README.md`.
+Bezels come from a source folder outside the repo (the PSDs are about 2 GB)
+laid out as `<Family>/Photoshop/**/<Model> - <Color> - <Pose>.psd` with
+matching `<Family>/PNG/**/<same name>.png`.
+
+1. Put the new PSDs and PNGs in the source folder.
+2. Add the model to `modelOrder` in `scripts/import-bezels.swift`, in
+   newest-first position. The order drives the picker and the default
+   selection when several models share a screenshot size. New pose names also
+   need adding to `poses` there and to `Pose` in `Bezel.swift`.
+3. Run `swift scripts/import-bezels.swift <path-to-Bezels>`. It reads each
+   PSD's `Screen` layer bounds (pixel data is never extracted from PSDs),
+   checks everything (missing pairs, unknown models or poses, PNG/PSD size
+   mismatch, an opaque screen center, duplicates) and **writes nothing if
+   anything fails**. On success it regenerates `AppSnap/Assets.xcassets/Bezels/`
+   and `AppSnap/Device/BezelCatalog.swift` from scratch.
+4. Update the supported-devices list in `README.md`.
+
+Devices that share a screenshot size all show up as candidates for it. That's
+intended; the user picks the right one.
 
 ## Release
 
@@ -120,8 +140,8 @@ this script when the user asks for a release.
 
 ## Conventions
 
-- New Swift files start with the `// Copyright © 2025 Apparata AB. All rights
-  reserved.` header block, use 4-space indentation, and use `// MARK: -`
+- New Swift files start with the `// Copyright © <year> Apparata AB. All
+  rights reserved.` header block, use 4-space indentation, and use `// MARK: -`
   sections.
 - Use Swift Observation (`@Observable`, `@State`), not `ObservableObject`.
 - License is 0BSD. Third-party notices go in `ATTRIBUTIONS.md` and in the

@@ -14,16 +14,13 @@ struct MainWindow: Scene {
 
         WindowGroup {
             ContentView()
-                .frame(minWidth: 400, minHeight: 700)
+                .frame(minWidth: ContentView.minimumSize.width, minHeight: ContentView.minimumSize.height)
         }
         .defaultSize(width: 400, height: 700)
+        .handlesExternalEvents(matching: ["*"])
         .commands {
             AboutCommand()
             CheckForUpdatesCommand(updater: updater)
-            HelpCommands()
-
-            /// Add a menu with custom commands
-            MyCommands()
 
             // Remove the "New Window" option from the File menu.
             CommandGroup(replacing: .newItem, addition: { })

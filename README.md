@@ -9,17 +9,27 @@ out — or export it as a PNG.
 - Drag-and-drop a `.png`/`.jpg` screenshot onto the window, or open it from the
   toolbar.
 - Automatic device detection based on the screenshot's pixel dimensions. The
-  picker lists every color variant that matches the detected device.
+  picker lists every model and color that matches, newest model first.
+- Portrait and landscape screenshots. Landscape frames can be rotated 180° to
+  put the Dynamic Island on either side; the app makes an experimental guess
+  at which side it was.
+- iPhone Duo in all its poses: outer display closed (portrait and landscape)
+  or open, and inner display open (portrait and landscape).
+- The window resizes to fit the frame's shape.
 - Drag the framed result straight into another app, export it to a PNG, or let
   the app copy it to the clipboard automatically.
-- Menu bar companion window, in-app Help window, and Sparkle-based auto-update.
+- Sparkle-based auto-update.
 
 ## Supported devices
 
-iPhone 14, 14 Plus, 14 Pro, 14 Pro Max, 15, 15 Plus, 15 Pro, 15 Pro Max, 16,
-16 Plus, 16 Pro, 16 Pro Max — each with the color variants Apple shipped.
-Only screenshots whose pixel dimensions exactly match one of these devices are
+iPhone 16, 16 Plus, 16 Pro, 16 Pro Max, 17, Air, 17 Pro, 17 Pro Max, 18 Pro,
+18 Pro Max and Duo, each with the color variants Apple shipped. Only
+screenshots whose pixel dimensions exactly match one of these devices are
 accepted.
+
+Version 2.0.0 dropped the iPhone 14 and 15 frames. Screenshots from the
+iPhone 14 Pro, 14 Pro Max and the iPhone 15 family have the same size as
+iPhone 16 models and are framed with those.
 
 ## Installing
 
