@@ -395,8 +395,6 @@ struct ContentView: View {
     // MARK: - Drop
 
     private func handleDrop(_ provider: NSItemProvider) -> Bool {
-        print("Drop offered types: \(provider.registeredTypeIdentifiers)")
-
         if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
             _ = provider.loadTransferable(type: URL.self) { result in
                 Task { @MainActor in
