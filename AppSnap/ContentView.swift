@@ -4,6 +4,7 @@
 
 import SwiftUI
 import Constructs
+import UniformTypeIdentifiers
 
 struct ContentView: View {
 
@@ -30,11 +31,18 @@ struct ContentView: View {
     /// area has been laid out.
     @State private var pendingResize: CGSize?
 
+    /// Progress of a running recording export.
+    @State private var exportProgress: Double?
+
+    @State private var exportTask: Task<Void, Never>?
+
+    @State private var isBackgroundHelpPresented = false
+
     // MARK: - Body
 
     var body: some View {
         VStack {
-            if model.screenshot != nil {
+            if model.source != nil {
                 VStack(spacing: 20) {
                     previewArea
                     controls
@@ -46,8 +54,9 @@ struct ContentView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "apps.iphone")
                         .font(.system(size: 72))
-                    Text("Drop iPhone screenshot here")
+                    Text("Drop iPhone screenshot or\n screen recording here")
                         .font(.title2)
+                        .multilineTextAlignment(.center)
                 }
                 .foregroundStyle(Color.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -60,7 +69,7 @@ struct ContentView: View {
         }
         // Open files in this window instead of creating a new one.
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
-        .onChange(of: model.compositedImage?.size) { _, size in
+        .onChange(of: model.compositeSize) { _, size in
             scheduleResize(toFit: size)
         }
 
@@ -76,41 +85,43 @@ struct ContentView: View {
             }
         }
 
-        // MARK: - Drop Destination (NSImage)
+        // MARK: - Export Progress Overlay
 
-        .dropDestination(for: NSImage.self) { items, _ in
-            guard let image = items.first else {
-                return false
+        .overlay {
+            if let exportProgress {
+                exportProgressView(exportProgress)
             }
-            return load { try model.loadScreenshot(image) }
         }
 
-        // MARK: - Drop Destination (URL)
+        // MARK: - Drop Destination
 
-        .dropDestination(for: URL.self) { urls, _ in
-            guard let url = urls.first else {
+        // A single drop handler: stacked drop destinations don't combine,
+        // and recordings can arrive as a file URL or as promised movie data
+        // (the Simulator's recording thumbnail, for example).
+        .onDrop(of: [.fileURL, .movie, .image], isTargeted: nil) { providers in
+            guard let provider = providers.first else {
                 return false
             }
-            return load { try model.loadScreenshot(from: url) }
+            return handleDrop(provider)
         }
 
         // MARK: - On Open URL
 
         .onOpenURL { url in
-            load { try model.loadScreenshot(from: url) }
+            loadAsync { try await model.load(from: url) }
         }
 
         // MARK: - File Importer
 
         .fileImporter(
             isPresented: $isImporterPresented,
-            allowedContentTypes: [.png, .jpeg],
+            allowedContentTypes: [.png, .jpeg, .movie],
             allowsMultipleSelection: false
         ) { result in
             switch result {
             case .success(let urls):
                 if let url = urls.first {
-                    load { try model.loadScreenshot(from: url, isSecurityScoped: true) }
+                    loadAsync { try await model.load(from: url, isSecurityScoped: true) }
                 }
             case .failure(let error):
                 dump(error)
@@ -130,6 +141,7 @@ struct ContentView: View {
             ToolbarItem(placement: .automatic) {
                 Button {
                     Task {
+                        await model.freezeVideoFrame()
                         startDate = Date()
                         withAnimation(.smooth) {
                             footerOpacity = 0
@@ -146,12 +158,17 @@ struct ContentView: View {
             }
             ToolbarItem(placement: .automatic) {
                 Button {
-                    if let image = model.compositedImage, let selection = model.selection {
-                        exportImage(image, name: selection.fileName)
+                    if let selection = model.selection {
+                        if model.isVideo {
+                            exportVideo(name: selection.fileName)
+                        } else if let image = model.compositedImage {
+                            exportImage(image, name: selection.fileName)
+                        }
                     }
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
+                .disabled(exportProgress != nil || (model.isVideo && model.videoComposition == nil))
             }
         }
     }
@@ -233,8 +250,77 @@ struct ContentView: View {
                         .help("Rotate 180° to put the Dynamic Island on the other side")
                     }
                 }
+
+                if model.isVideo {
+                    videoBackgroundControls
+                }
             }
         }
+    }
+
+    /// Transparent exports are HEVC with alpha, which not every player
+    /// supports, so a solid background is offered too.
+    private var videoBackgroundControls: some View {
+        HStack {
+            Picker("Background", selection: Binding(
+                get: { model.videoBackground.isTransparent },
+                set: { isTransparent in
+                    withAnimation(.smooth(duration: 0.25)) {
+                        model.setVideoBackground(isTransparent ? .transparent : .color(model.videoBackgroundColor))
+                    }
+                }
+            )) {
+                Text("Transparent").tag(true)
+                Text("Color").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .help("Background of the exported video")
+
+            if !model.videoBackground.isTransparent {
+                ColorPicker("Background Color", selection: Binding(
+                    get: { model.videoBackgroundColor },
+                    set: { model.setVideoBackground(.color($0)) }
+                ), supportsOpacity: false)
+                .labelsHidden()
+                .transition(.scale(scale: 0.5).combined(with: .opacity))
+            }
+
+            HelpLink {
+                isBackgroundHelpPresented = true
+            }
+            .controlSize(.small)
+            .popover(isPresented: $isBackgroundHelpPresented, arrowEdge: .bottom) {
+                backgroundHelp
+            }
+        }
+    }
+
+    private var backgroundHelp: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Transparent")
+                    .font(.headline)
+                Text("""
+                    Only the device is visible; everything around it is see-through. \
+                    Exported as an HEVC video with alpha (.mov), which works in QuickTime, \
+                    Safari, Keynote and Final Cut Pro, but not in every app or browser. \
+                    Elsewhere the background may show up as black.
+                    """)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Color")
+                    .font(.headline)
+                Text("""
+                    The device is placed on a solid color of your choice. \
+                    Exported as a regular HEVC video (.mp4) that plays almost anywhere.
+                    """)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: 300)
+        .padding()
     }
 
     // MARK: - Device View
@@ -262,6 +348,18 @@ struct ContentView: View {
                         provider.suggestedName = selection.fileName
                     }
                 }
+        } else if model.isVideo, model.videoComposition != nil, let size = model.compositeSize {
+            PlayerView(player: model.player)
+                .aspectRatio(size, contentMode: .fit)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if model.player.timeControlStatus == .paused {
+                        model.player.play()
+                    } else {
+                        model.player.pause()
+                    }
+                }
+                .help("Click to play or pause")
         }
     }
 
@@ -272,18 +370,107 @@ struct ContentView: View {
     private func load(_ action: () throws -> Void) -> Bool {
         do {
             try action()
-        } catch let error as AppError {
-            showToast(error.message)
-            return false
         } catch {
-            showToast("Unexpected error")
+            showError(error)
             return false
         }
+        didLoad()
+        return true
+    }
+
+    /// Runs a load action that may take a while, such as opening a
+    /// recording, and shows a toast if it fails.
+    private func loadAsync(_ action: @escaping () async throws -> Void) {
+        Task {
+            do {
+                try await action()
+            } catch {
+                showError(error)
+                return
+            }
+            didLoad()
+        }
+    }
+
+    // MARK: - Drop
+
+    private func handleDrop(_ provider: NSItemProvider) -> Bool {
+        print("Drop offered types: \(provider.registeredTypeIdentifiers)")
+
+        if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+            _ = provider.loadTransferable(type: URL.self) { result in
+                Task { @MainActor in
+                    switch result {
+                    case .success(let url):
+                        loadAsync { try await model.load(from: url) }
+                    case .failure(let error):
+                        print("Could not load dropped URL: \(error)")
+                        showToast(AppError.unsupportedFile.message)
+                    }
+                }
+            }
+            return true
+        }
+
+        if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
+            // The file only exists until the handler returns, so it is
+            // copied somewhere that lasts while the recording is open.
+            provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
+                var copy: URL?
+                if let url {
+                    let directory = FileManager.default.temporaryDirectory
+                        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+                    let destination = directory.appendingPathComponent(url.lastPathComponent)
+                    do {
+                        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                        try FileManager.default.copyItem(at: url, to: destination)
+                        copy = destination
+                    } catch {
+                        print("Could not copy dropped movie: \(error)")
+                    }
+                } else if let error {
+                    print("Could not load dropped movie: \(error)")
+                }
+                Task { @MainActor in
+                    if let copy {
+                        loadAsync { try await model.load(from: copy) }
+                    } else {
+                        showToast(AppError.unsupportedFile.message)
+                    }
+                }
+            }
+            return true
+        }
+
+        if provider.canLoadObject(ofClass: NSImage.self) {
+            _ = provider.loadObject(ofClass: NSImage.self) { image, _ in
+                Task { @MainActor in
+                    if let image = image as? NSImage {
+                        load { try model.loadScreenshot(image) }
+                    } else {
+                        showToast(AppError.unsupportedFile.message)
+                    }
+                }
+            }
+            return true
+        }
+
+        return false
+    }
+
+    private func showError(_ error: Error) {
+        if let error = error as? AppError {
+            showToast(error.message)
+        } else {
+            showToast("Unexpected error")
+        }
+    }
+
+    private func didLoad() {
         bounce()
         withAnimation(.smooth) {
             footerOpacity = 1
         }
-        return true
     }
 
     private func showToast(_ message: String) {
@@ -306,6 +493,48 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Export Video
+
+    func exportVideo(name: String) {
+        let type = VideoExporter.contentType(for: model.videoBackground)
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [type]
+        panel.nameFieldStringValue = "\(name).\(type.preferredFilenameExtension ?? "mov")"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else {
+                return
+            }
+            exportProgress = 0
+            exportTask = Task {
+                do {
+                    try await model.exportVideo(to: url) { progress in
+                        exportProgress = progress
+                    }
+                } catch is CancellationError {
+                    // Cancelled by the user.
+                } catch {
+                    showError(error)
+                }
+                exportProgress = nil
+                exportTask = nil
+            }
+        }
+    }
+
+    private func exportProgressView(_ progress: Double) -> some View {
+        VStack(spacing: 12) {
+            Text("Exporting Video…")
+                .font(.headline)
+            ProgressView(value: progress)
+                .frame(width: 200)
+            Button("Cancel") {
+                exportTask?.cancel()
+            }
+        }
+        .padding(24)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Window Resizing

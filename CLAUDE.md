@@ -4,7 +4,8 @@ Embezel is a SwiftUI macOS app (macOS 14+, Swift 5.10, arm64 releases) that
 composites an iPhone screenshot into a photorealistic device bezel image. The
 user drops a screenshot, the app detects which devices match its pixel size,
 the user picks a color variant, and the framed PNG can be dragged out,
-exported, or is copied to the clipboard automatically. Supported devices are
+exported, or is copied to the clipboard automatically. Screen recordings are
+framed too and exported as HEVC video. Supported devices are
 the iPhone 16, 17 (including Air), 18 Pro/Pro Max and Duo families, in portrait
 and landscape, and in every Duo pose.
 
@@ -63,6 +64,18 @@ xcodebuild -project AppSnap.xcodeproj -scheme "AppSnap (Debug)" -destination 'pl
   `makeScreenMask` computes from the bezel's alpha. It flood-fills the
   non-opaque pixels reachable from the canvas border ("outside the phone").
   Output keeps the screenshot's color space (usually Display P3).
+- `AppSnap/Device/VideoBezelComposer.swift`: the video counterpart of
+  `BezelRenderer`, an `AVVideoComposition` with a Core Image handler that does
+  the same mask + bezel composite per frame. Unlike screenshots, recordings
+  are **scaled** to fill the screen rectangle (aspect-fill), because on-device
+  recordings are often downscaled. Frames whose size is the display size
+  swapped are turned upright from the track's preferred transform.
+  `renderSize` is rounded up to even dimensions for the encoder.
+  `VideoBackground` is transparent or a solid color.
+- `AppSnap/Device/VideoExporter.swift`: `AVAssetExportSession` export.
+  Transparent goes to HEVC with alpha in `.mov`, a solid color to HEVC in
+  `.mp4`. Audio is passed through. Progress is polled (macOS 14 has no
+  async progress API), and cancelling the task cancels the export.
 - `AppSnap/Device/RotationDetector.swift`: **experimental** guess at which side
   the Dynamic Island was on in a landscape screenshot. Screenshots contain no
   island pixels and landscape safe areas are symmetric, so it only answers when
@@ -81,14 +94,27 @@ xcodebuild -project AppSnap.xcodeproj -scheme "AppSnap (Debug)" -destination 'pl
     model, first color, first pose (Duo outer portrait defaults to Closed
     rather than Open). Rotation comes from `RotationDetector`. Nothing is
     remembered between screenshots.
+  - The source is an `image` or a `video` (`AVURLAsset`). `load(from:)`
+    routes movie files to `loadVideo`. Recordings match bezels exactly first;
+    failing that, every bezel whose screen aspect ratio is within 1%.
+    Rotation is detected on a frame near the start.
+  - For a recording, `makeComposite` builds the `videoComposition`
+    asynchronously (a newer selection cancels an older build) and sets it on
+    the muted, looping `player`. Nothing is copied to the pasteboard.
+    `freezeVideoFrame` swaps in a still frame before clearing, because the
+    dissolve shader can't apply to the AppKit player view.
   - Every composite, including each picker, pose or rotation change, is
     copied to the pasteboard. Bezel images and screen masks are cached by
     image name.
 - `AppSnap/ContentView.swift`: the single main view. Inputs are drag and drop
   (`NSImage` and `URL`), `onOpenURL` (files opened in Finder go to the
-  existing window via `handlesExternalEvents`), and `.fileImporter` (PNG and
-  JPEG, security-scoped URLs). Below the preview: a model + color picker, a
-  pose segmented control (only when several poses fit), and a rotate button
+  existing window via `handlesExternalEvents`), and `.fileImporter` (PNG,
+  JPEG and movies, security-scoped URLs). Recordings play in `PlayerView`
+  (`AppSnap/Utilities/PlayerView.swift`), a bare `AVPlayerLayer` with a clear
+  background; click toggles playback. Recordings get a background control
+  (Transparent / Color) and can't be dragged out, only exported. Below the
+  preview: a model + color picker, a pose segmented control (only when
+  several poses fit), and a rotate button
   (landscape only). The toolbar has open, clear (plays the Metal dissolve
   shader `removeEffect` in `AppSnap/Effects/RemoveEffect.metal`), and export
   to PNG. When the composite's aspect changes, the window resizes to fit it,
