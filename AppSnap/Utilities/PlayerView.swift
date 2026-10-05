@@ -44,4 +44,9 @@ final class PlayerLayerView: NSView {
     override func makeBackingLayer() -> CALayer {
         playerLayer
     }
+
+    /// Lets clicks and drags through to the SwiftUI gestures on this view.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
 }

@@ -107,20 +107,24 @@ xcodebuild -project AppSnap.xcodeproj -scheme "AppSnap (Debug)" -destination 'pl
     copied to the pasteboard. Bezel images and screen masks are cached by
     image name.
 - `AppSnap/ContentView.swift`: the single main view. Inputs are drag and drop
-  (`NSImage` and `URL`), `onOpenURL` (files opened in Finder go to the
-  existing window via `handlesExternalEvents`), and `.fileImporter` (PNG,
-  JPEG and movies, security-scoped URLs). Recordings play in `PlayerView`
+  (one `onDrop` handler for file URLs, promised movie files such as the
+  Simulator's recording thumbnail, and images; stacked `dropDestination`s
+  don't combine), `onOpenURL` (files opened in Finder go to the existing
+  window via `handlesExternalEvents`), and `.fileImporter` (PNG, JPEG and
+  movies, security-scoped URLs). Recordings play in `PlayerView`
   (`AppSnap/Utilities/PlayerView.swift`), a bare `AVPlayerLayer` with a clear
-  background; click toggles playback. Recordings get a background control
-  (Transparent / Color) and can't be dragged out, only exported. Below the
-  preview: a model + color picker, a pose segmented control (only when
-  several poses fit), and a rotate button
-  (landscape only). The toolbar has open, clear (plays the Metal dissolve
-  shader `removeEffect` in `AppSnap/Effects/RemoveEffect.metal`), and export
-  to PNG. When the composite's aspect changes, the window resizes to fit it,
-  keeping its content area and center (`resizeWindowIfNeeded`, using the
-  window from `WindowReflection`). The minimum width is 400 pt, because
-  narrower windows push toolbar buttons into an overflow menu.
+  background that passes mouse events through; click toggles playback.
+  Recordings get a background control (Transparent / Color, with a help
+  popover) and can't be dragged out: a drag shows an alert that offers to
+  export instead. Below the preview: a model + color picker, a pose segmented
+  control (only when several poses fit), and a rotate button (landscape
+  only). The toolbar has open, clear (plays the Metal dissolve shader
+  `removeEffect` in `AppSnap/Effects/RemoveEffect.metal`), and export (PNG,
+  or a movie for recordings). When the composite's aspect changes, the window
+  resizes to fit it, keeping its content area and center
+  (`resizeWindowIfNeeded`, using the window from `WindowReflection`). The
+  minimum width is 400 pt, because narrower windows push toolbar buttons into
+  an overflow menu.
 
 Scenes are registered in `AppSnap/MacApp.swift`: the main window, about and
 attributions. Sparkle's `SPUStandardUpdaterController` lives there too and

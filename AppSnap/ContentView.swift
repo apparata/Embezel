@@ -38,6 +38,12 @@ struct ContentView: View {
 
     @State private var isBackgroundHelpPresented = false
 
+    @State private var isDragOutAlertPresented = false
+
+    /// Set while the mouse is down after a drag on a recording, so a single
+    /// drag shows the alert only once.
+    @State private var isDraggingVideo = false
+
     // MARK: - Body
 
     var body: some View {
@@ -359,7 +365,31 @@ struct ContentView: View {
                         model.player.pause()
                     }
                 }
+                // A recording would have to be exported before it could be
+                // dropped somewhere, which blocks, so offer to export instead.
+                .gesture(DragGesture(minimumDistance: 8)
+                    .onChanged { _ in
+                        if !isDraggingVideo {
+                            isDraggingVideo = true
+                            isDragOutAlertPresented = true
+                        }
+                    }
+                    .onEnded { _ in
+                        isDraggingVideo = false
+                    }
+                )
                 .help("Click to play or pause")
+                .alert("Videos Can’t Be Dragged Out", isPresented: $isDragOutAlertPresented) {
+                    Button("Export…") {
+                        if let selection = model.selection {
+                            exportVideo(name: selection.fileName)
+                        }
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("A framed video has to be encoded to a file first, which can take a while. Do you want to export it?")
+                }
         }
     }
 
