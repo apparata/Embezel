@@ -85,6 +85,14 @@ struct BatchTile: View {
     private var badges: some View {
         VStack {
             HStack {
+                if item.kind == .video {
+                    Label(durationText, systemImage: "video.fill")
+                        .font(.caption2.monospacedDigit())
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(.regularMaterial, in: Capsule())
+                        .help("Screen recording; encoded when dragged out or exported")
+                }
                 Spacer()
                 if item.override != nil {
                     Image(systemName: "slider.horizontal.3")
@@ -111,6 +119,14 @@ struct BatchTile: View {
             }
         }
         .padding(4)
+    }
+
+    private var durationText: String {
+        guard let duration = item.duration, duration.isFinite else {
+            return ""
+        }
+        let seconds = Int(duration.rounded())
+        return String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
 
     private var statusMessage: String? {

@@ -100,6 +100,20 @@ enum VideoBezelComposer {
         return CGSize(width: abs(size.width).rounded(), height: abs(size.height).rounded())
     }
 
+    /// A frame near the start (0.5 s, or the middle of shorter recordings),
+    /// framed with the composition if one is given.
+    static func posterFrame(of asset: AVAsset, composition: AVVideoComposition? = nil) async -> CGImage? {
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.videoComposition = composition
+        let duration = (try? await asset.load(.duration)) ?? .zero
+        let time = CMTimeMinimum(
+            CMTime(seconds: 0.5, preferredTimescale: 600),
+            CMTimeMultiplyByRatio(duration, multiplier: 1, divisor: 2)
+        )
+        return try? await generator.image(at: time).image
+    }
+
     // MARK: - Frame Placement
 
     /// Scales the frame to fill the rectangle, centered, and crops off any

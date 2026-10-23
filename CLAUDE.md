@@ -143,9 +143,13 @@ top-level files (`BatchPlanning.expand`).
   its own `Override` if it has one, otherwise with its group's model, color
   and pose, plus its own rotation (`effectiveSelection(for:)`). Items are
   probed and rendered off the main actor, at most 4 at a time
-  (`RenderLimiter`). Each render is written to a PNG under
+  (`RenderLimiter`). Each screenshot render is written to a PNG under
   `Embezel-Batch-<UUID>` in the temporary folder, and only a thumbnail stays
   in memory. Those folders are removed on clear, launch and quit.
+  Recordings match like in the single view (exact, then by aspect ratio)
+  and only get a framed poster-frame thumbnail; they are encoded when a
+  drag's file promise is written or when exported, with progress published
+  for the destination file. One `videoBackground` applies to all of them.
 - `AppSnap/Batch/BatchDragSource.swift`: an AppKit drag source, because
   SwiftUI drags carry a single item. Each dragged file is an
   `NSFilePromiseProvider` that also offers the rendered file's URL, for apps

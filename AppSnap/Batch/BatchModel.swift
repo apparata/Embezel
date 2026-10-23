@@ -3,16 +3,18 @@
 //
 
 import AppKit
+import AVFoundation
 import ImageIO
 import UniformTypeIdentifiers
 
-/// Several screenshots framed at once.
+/// Several screenshots and recordings framed at once.
 ///
 /// Items are grouped by the models that fit them. Each group has one model
 /// and color choice, and an item can have its own choice instead, which it
-/// keeps when the group's choice changes. Every ready item is rendered to a
-/// PNG in a temporary folder, so it can be dragged out as a file; only a
-/// thumbnail is kept in memory.
+/// keeps when the group's choice changes. Every ready screenshot is rendered
+/// to a PNG in a temporary folder, so it can be dragged out as a file; only a
+/// thumbnail is kept in memory. Recordings are only encoded when they are
+/// dragged out or exported.
 @MainActor @Observable final class BatchModel {
 
     enum Status: Equatable {
@@ -41,6 +43,9 @@ import UniformTypeIdentifiers
         var isRendering = false
         var thumbnail: NSImage?
 
+        /// Length of a recording, in seconds.
+        var duration: Double?
+
         /// The selection the rendered file was made with.
         var selection: Selection?
         var renderedURL: URL?
@@ -53,7 +58,10 @@ import UniformTypeIdentifiers
         }
 
         var isReady: Bool {
-            status == .ready && renderedURL != nil && !isRendering
+            guard status == .ready, !isRendering, selection != nil else {
+                return false
+            }
+            return kind == .video || renderedURL != nil
         }
 
         /// Output file name without extension.
@@ -71,6 +79,16 @@ import UniformTypeIdentifiers
     private(set) var items: [Item] = []
     private(set) var groups: [Group] = []
     var selectedIDs: Set<Item.ID> = []
+
+    /// Background of all recordings in the batch.
+    private(set) var videoBackground: VideoBackground = .transparent
+
+    /// The last solid color, kept while the background is transparent.
+    private(set) var videoBackgroundColor = CGColor(gray: 1, alpha: 1)
+
+    var containsVideos: Bool {
+        items.contains { $0.kind == .video && $0.groupID != nil }
+    }
 
     /// Holds one subfolder per item with its rendered file.
     @ObservationIgnored private let directory: URL
@@ -187,12 +205,70 @@ import UniformTypeIdentifiers
     func dragFiles(for ids: Set<Item.ID>) -> [PromisedFile] {
         var taken: Set<String> = []
         return readyItems(ids).compactMap { item in
-            guard let url = item.renderedURL, let name = item.outputName else {
+            guard let name = item.outputName else {
                 return nil
             }
-            let fileName = BatchPlanning.uniqueFileName(name, extension: url.pathExtension, taken: &taken)
-            return PromisedFile.copy(of: url, named: fileName, thumbnail: item.thumbnail)
+            switch item.kind {
+            case .image:
+                guard let url = item.renderedURL else {
+                    return nil
+                }
+                let fileName = BatchPlanning.uniqueFileName(name, extension: url.pathExtension, taken: &taken)
+                return PromisedFile.copy(of: url, named: fileName, thumbnail: item.thumbnail)
+            case .video:
+                return videoFile(for: item, name: name, taken: &taken)
+            }
         }
+    }
+
+    /// A recording is encoded when the promise is written: after the drop,
+    /// or during an export. Progress is published for the destination file,
+    /// so Finder can show it.
+    private func videoFile(for item: Item, name: String, taken: inout Set<String>) -> PromisedFile? {
+        guard let source = item.originalURL,
+              let selection = item.selection,
+              let assets = BezelAssets.shared.assets(for: selection.bezel) else {
+            return nil
+        }
+        let background = videoBackground
+        let type = VideoExporter.contentType(for: background)
+        let fileName = BatchPlanning.uniqueFileName(
+            name,
+            extension: type.preferredFilenameExtension ?? "mov",
+            taken: &taken
+        )
+        return PromisedFile(
+            fileName: fileName,
+            fileType: type,
+            existingFile: nil,
+            thumbnail: item.thumbnail,
+            write: { destination in
+                let progress = Progress(totalUnitCount: 100)
+                progress.kind = .file
+                progress.fileOperationKind = .copying
+                progress.fileURL = destination
+                progress.publish()
+                defer {
+                    progress.unpublish()
+                }
+                let asset = AVURLAsset(url: source)
+                let composition = try await VideoBezelComposer.makeComposition(
+                    asset: asset,
+                    selection: selection,
+                    bezelImage: assets.image,
+                    screenMask: assets.mask,
+                    background: background
+                )
+                try await VideoExporter.export(
+                    asset: asset,
+                    composition: composition,
+                    background: background,
+                    to: destination
+                ) { fraction in
+                    progress.completedUnitCount = Int64(fraction * 100)
+                }
+            }
+        )
     }
 
     /// The bezel an item is framed with: its own choice, or else its
@@ -246,6 +322,16 @@ import UniformTypeIdentifiers
         render(id)
     }
 
+    func setVideoBackground(_ background: VideoBackground) {
+        videoBackground = background
+        if case .color(let color) = background {
+            videoBackgroundColor = color
+        }
+        for item in items where item.kind == .video && item.groupID != nil {
+            render(item.id)
+        }
+    }
+
     /// Lets the item follow its group's choice again.
     func useGroupSetting(_ ids: Set<Item.ID>) {
         for id in ids {
@@ -278,7 +364,7 @@ import UniformTypeIdentifiers
         let source = item.source
         renderTasks[id] = Task {
             let probe = await Task.detached(priority: .userInitiated) {
-                Self.probe(source)
+                await Self.probe(source)
             }.value
             guard !Task.isCancelled else {
                 return
@@ -291,11 +377,13 @@ import UniformTypeIdentifiers
         var kind: MediaKind?
         var size: CGSize?
         var rotation: RotationDetector.Guess = .unknown
+        var duration: Double?
     }
 
     /// Reads what's needed to match bezels. Only landscape screenshots are
-    /// decoded fully, for rotation detection.
-    private nonisolated static func probe(_ source: BatchInput.Source) -> Probe {
+    /// decoded fully, for rotation detection; for landscape recordings, a
+    /// frame near the start is.
+    private nonisolated static func probe(_ source: BatchInput.Source) async -> Probe {
         switch source {
         case .image(let image):
             let size = CGSize(width: image.width, height: image.height)
@@ -305,8 +393,8 @@ import UniformTypeIdentifiers
             guard let kind = MediaKind(url: url) else {
                 return Probe()
             }
-            guard kind == .image else {
-                return Probe(kind: kind)
+            if kind == .video {
+                return await probeVideo(url)
             }
             guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
                   let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
@@ -322,6 +410,19 @@ import UniformTypeIdentifiers
         }
     }
 
+    private nonisolated static func probeVideo(_ url: URL) async -> Probe {
+        let asset = AVURLAsset(url: url)
+        guard let size = try? await VideoBezelComposer.displaySize(of: asset) else {
+            return Probe(kind: .video)
+        }
+        var probe = Probe(kind: .video, size: size)
+        probe.duration = try? await asset.load(.duration).seconds
+        if size.width > size.height, let frame = await VideoBezelComposer.posterFrame(of: asset) {
+            probe.rotation = RotationDetector.detect(frame)
+        }
+        return probe
+    }
+
     private func apply(_ probe: Probe, to id: Item.ID) {
         guard let index = items.firstIndex(where: { $0.id == id }) else {
             return
@@ -331,18 +432,22 @@ import UniformTypeIdentifiers
             return
         }
         items[index].kind = kind
-        guard kind == .image else {
-            items[index].status = .unsupported("Recordings aren’t supported in batches yet")
-            return
-        }
+        items[index].duration = probe.duration
         guard let size = probe.size else {
             items[index].status = .failed(AppError.unsupportedFile.message)
             return
         }
-        let candidates = BezelMatching.bezels(for: size, allowScaling: false)
+        // Recordings may be downscaled, so they also match by aspect ratio.
+        let candidates = BezelMatching.bezels(for: size, allowScaling: kind == .video)
         guard let first = candidates.first else {
-            let message = BezelMatching.droppedDevice(for: size).map { AppError.droppedDevice($0).message }
-                ?? AppError.unsupportedScreenshotSize.message
+            let message: String
+            if kind == .video {
+                message = AppError.unsupportedRecordingSize.message
+            } else if let device = BezelMatching.droppedDevice(for: size) {
+                message = AppError.droppedDevice(device).message
+            } else {
+                message = AppError.unsupportedScreenshotSize.message
+            }
             items[index].status = .unsupported(message)
             return
         }
@@ -386,6 +491,10 @@ import UniformTypeIdentifiers
             return
         }
         items[index].isRendering = true
+        if items[index].kind == .video {
+            renderVideo(id, selection: selection)
+            return
+        }
         let source = items[index].source
         let fileName = BatchPlanning.outputName(original: items[index].name, selection: selection) + ".png"
         let folder = itemDirectory(id)
@@ -442,6 +551,64 @@ import UniformTypeIdentifiers
         case .failure(let error):
             print("Could not render \(items[index].name): \(error)")
             items[index].status = .failed("Could not frame this image")
+        }
+    }
+
+    /// For a recording, only the thumbnail is made: a frame near the start,
+    /// framed with the item's bezel and the batch's background.
+    private func renderVideo(_ id: Item.ID, selection: Selection) {
+        guard let index = items.firstIndex(where: { $0.id == id }),
+              let url = items[index].originalURL else {
+            return
+        }
+        let background = videoBackground
+        let limiter = limiter
+
+        renderTasks[id] = Task {
+            await limiter.acquire()
+            defer {
+                Task {
+                    await limiter.release()
+                }
+            }
+            guard !Task.isCancelled,
+                  let assets = await BezelAssets.shared.loadAssets(for: selection.bezel),
+                  !Task.isCancelled else {
+                return
+            }
+            let asset = AVURLAsset(url: url)
+            let frame: CGImage?
+            do {
+                let composition = try await VideoBezelComposer.makeComposition(
+                    asset: asset,
+                    selection: selection,
+                    bezelImage: assets.image,
+                    screenMask: assets.mask,
+                    background: background
+                )
+                frame = await VideoBezelComposer.posterFrame(of: asset, composition: composition)
+            } catch {
+                print("Could not frame recording: \(error)")
+                frame = nil
+            }
+            guard !Task.isCancelled else {
+                return
+            }
+            guard let index = items.firstIndex(where: { $0.id == id }) else {
+                return
+            }
+            items[index].isRendering = false
+            guard let frame else {
+                items[index].status = .failed("Could not frame this recording")
+                return
+            }
+            let thumbnail = BatchImageRenderer.thumbnail(of: frame) ?? frame
+            items[index].thumbnail = NSImage(
+                cgImage: thumbnail,
+                size: NSSize(width: thumbnail.width, height: thumbnail.height)
+            )
+            items[index].selection = selection
+            items[index].status = .ready
         }
     }
 
@@ -524,7 +691,7 @@ enum BatchImageRenderer {
         }
     }
 
-    private static func thumbnail(of image: CGImage) -> CGImage? {
+    static func thumbnail(of image: CGImage) -> CGImage? {
         let scale = min(1, Double(thumbnailSize) / Double(max(image.width, image.height)))
         let width = max(Int((Double(image.width) * scale).rounded()), 1)
         let height = max(Int((Double(image.height) * scale).rounded()), 1)

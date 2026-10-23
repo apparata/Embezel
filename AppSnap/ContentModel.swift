@@ -263,7 +263,7 @@ enum AppError: Error {
             guard !matches.isEmpty else {
                 throw AppError.unsupportedRecordingSize
             }
-            poster = await posterFrame(of: asset)
+            poster = await VideoBezelComposer.posterFrame(of: asset)
         } catch {
             if isSecurityScoped {
                 url.stopAccessingSecurityScopedResource()
@@ -293,14 +293,6 @@ enum AppError: Error {
         let isRotated180 = bezel.pose.isLandscape
             && poster.map { RotationDetector.detect($0) == .rotated180 } == true
         select(Selection(bezel: bezel, isRotated180: isRotated180))
-    }
-
-    private func posterFrame(of asset: AVAsset) async -> CGImage? {
-        let generator = AVAssetImageGenerator(asset: asset)
-        generator.appliesPreferredTrackTransform = true
-        let duration = (try? await asset.load(.duration)) ?? .zero
-        let time = CMTimeMinimum(CMTime(seconds: 0.5, preferredTimescale: 600), CMTimeMultiplyByRatio(duration, multiplier: 1, divisor: 2))
-        return try? await generator.image(at: time).image
     }
 
     // MARK: - Compositing

@@ -66,13 +66,43 @@ struct BatchView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(itemCountText)
                     .font(.title3.weight(.semibold))
-                Text("Drag tiles out, or select some and drag them together.")
+                Text("Drag tiles out, or select some and drag them together. Recordings are encoded after the drop.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            if batch.containsVideos {
+                videoBackgroundControls
+            }
             dragAllHandle
         }
+    }
+
+    /// Background of all recordings in the batch.
+    private var videoBackgroundControls: some View {
+        HStack {
+            Picker("Recording Background", selection: Binding(
+                get: { batch.videoBackground.isTransparent },
+                set: { isTransparent in
+                    batch.setVideoBackground(isTransparent ? .transparent : .color(batch.videoBackgroundColor))
+                }
+            )) {
+                Text("Transparent").tag(true)
+                Text("Color").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+
+            if !batch.videoBackground.isTransparent {
+                ColorPicker("Background Color", selection: Binding(
+                    get: { batch.videoBackgroundColor },
+                    set: { batch.setVideoBackground(.color($0)) }
+                ), supportsOpacity: false)
+                .labelsHidden()
+            }
+        }
+        .help("Background of exported recordings: transparent (.mov, HEVC with alpha) or a solid color (.mp4)")
     }
 
     private var itemCountText: String {
