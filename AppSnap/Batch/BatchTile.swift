@@ -13,6 +13,7 @@ struct BatchTile: View {
     let isSelected: Bool
     let dragFiles: () -> [PromisedFile]
     let onClick: (NSEvent.ModifierFlags) -> Void
+    let onDoubleClick: () -> Void
     let onRotate: () -> Void
 
     @State private var isHovering = false
@@ -23,7 +24,7 @@ struct BatchTile: View {
                 preview
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                BatchDragSource(files: dragFiles, onClick: onClick)
+                BatchDragSource(files: dragFiles, onClick: onClick, onDoubleClick: onDoubleClick)
 
                 badges
             }

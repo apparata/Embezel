@@ -118,9 +118,9 @@ struct ContentView: View {
         // A single drop handler: stacked drop destinations don't combine,
         // and recordings can arrive as a file URL or as promised movie data
         // (the Simulator's recording thumbnail, for example).
-        .onDrop(of: [.fileURL, .movie, .image], isTargeted: nil) { providers in
+        .onDrop(of: Self.dropTypes, delegate: FileDropDelegate(types: Self.dropTypes) { providers in
             handleDrop(providers)
-        }
+        })
 
         // MARK: - On Open URL
 
@@ -408,6 +408,26 @@ struct ContentView: View {
     }
 
     // MARK: - Drop
+
+    private static let dropTypes: [UTType] = [.fileURL, .movie, .image]
+
+    /// Accepts dropped files, except ones dragged out of the batch grid:
+    /// those are framed already and could never be opened.
+    private struct FileDropDelegate: DropDelegate {
+        let types: [UTType]
+        let perform: ([NSItemProvider]) -> Bool
+
+        func validateDrop(info: DropInfo) -> Bool {
+            !BatchDragSource.isDragging && info.hasItemsConforming(to: types)
+        }
+
+        func performDrop(info: DropInfo) -> Bool {
+            guard !BatchDragSource.isDragging else {
+                return false
+            }
+            return perform(info.itemProviders(for: types))
+        }
+    }
 
     /// Something dropped or opened.
     enum OpenedItem {

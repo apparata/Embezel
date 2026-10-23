@@ -16,6 +16,12 @@ struct BatchView: View {
 
     @State private var customizingID: BatchModel.Item.ID?
 
+    /// The items shown large over the grid: one, or a multiple selection.
+    @State private var previewIDs: [BatchModel.Item.ID] = []
+
+    /// The previewed item, or the one centered in a strip of several.
+    @State private var previewID: BatchModel.Item.ID?
+
     @FocusState private var isFocused: Bool
 
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 220), spacing: 12)]
@@ -57,6 +63,77 @@ struct BatchView: View {
                 item.renderedURL.flatMap { NSItemProvider(contentsOf: $0) }
             }
         }
+        .onKeyPress(.space) {
+            guard let id = displayOrder.first(where: { batch.selectedIDs.contains($0) }) else {
+                return .ignored
+            }
+            preview(id)
+            return .handled
+        }
+        .overlay {
+            if let previewID {
+                BatchPreview(
+                    batch: batch,
+                    ids: previewIDs,
+                    currentID: Binding(
+                        get: { previewID },
+                        set: { self.previewID = $0 }
+                    ),
+                    onClose: closePreview,
+                    onMove: movePreview
+                )
+                .transition(.opacity)
+            }
+        }
+    }
+
+    // MARK: - Preview
+
+    /// Items that can be previewed, in the order they are shown.
+    private var previewableIDs: [BatchModel.Item.ID] {
+        displayOrder.filter { id in
+            batch.item(id).map { $0.isReady || $0.thumbnail != nil } == true
+        }
+    }
+
+    /// Previews the item, or the whole selection if the item is part of a
+    /// multiple selection.
+    private func preview(_ id: BatchModel.Item.ID) {
+        let previewable = previewableIDs
+        let ids = previewable.filter { targets(for: id).contains($0) }
+        guard !ids.isEmpty else {
+            return
+        }
+        if ids.count == 1 {
+            batch.selectedIDs = [ids[0]]
+            anchorID = ids[0]
+        }
+        withAnimation(.smooth(duration: 0.2)) {
+            previewIDs = ids
+            previewID = ids.contains(id) ? id : ids[0]
+        }
+    }
+
+    private func closePreview() {
+        withAnimation(.smooth(duration: 0.2)) {
+            previewID = nil
+            previewIDs = []
+        }
+        isFocused = true
+    }
+
+    /// Shows the previous or next previewable item, and selects it, like
+    /// Quick Look in Finder.
+    private func movePreview(_ offset: Int) {
+        let ids = previewableIDs
+        guard let previewID, let index = ids.firstIndex(of: previewID), !ids.isEmpty else {
+            return
+        }
+        let next = ids[(index + offset + ids.count) % ids.count]
+        self.previewID = next
+        previewIDs = [next]
+        batch.selectedIDs = [next]
+        anchorID = next
     }
 
     // MARK: - Header
@@ -117,9 +194,10 @@ struct BatchView: View {
             .padding(.vertical, 6)
             .background(.regularMaterial, in: Capsule())
             .overlay {
-                BatchDragSource(files: {
-                    batch.dragFiles(for: Set(batch.items.map(\.id)))
-                })
+                BatchDragSource(
+                    files: { batch.dragFiles(for: Set(batch.items.map(\.id))) },
+                    dragImageSize: CGSize(width: 120, height: 120)
+                )
             }
             .opacity(batch.readyItems.isEmpty ? 0.5 : 1)
             .help("Drag all framed files")
@@ -183,6 +261,7 @@ struct BatchView: View {
             isSelected: batch.selectedIDs.contains(item.id),
             dragFiles: { batch.dragFiles(for: dragTargets(for: item.id)) },
             onClick: { click(item.id, modifiers: $0) },
+            onDoubleClick: { preview(item.id) },
             onRotate: { batch.toggleRotation(targets(for: item.id)) }
         )
         .contextMenu {
@@ -200,6 +279,11 @@ struct BatchView: View {
         let targets = targets(for: item.id)
         let targetItems = batch.items.filter { targets.contains($0.id) }
 
+        if item.isReady || item.thumbnail != nil {
+            Button("Preview") {
+                preview(item.id)
+            }
+        }
         if item.groupID != nil {
             Button("Customize…") {
                 customizingID = item.id
