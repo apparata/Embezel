@@ -31,8 +31,14 @@ struct ContentView: View {
     /// area has been laid out.
     @State private var pendingResize: CGSize?
 
-    /// Progress of a running recording export.
+    /// Content size the window should be resized to, for batch mode.
+    @State private var pendingContentSize: CGSize?
+
+    /// Progress of a running export.
     @State private var exportProgress: Double?
+
+    /// Title of the export progress overlay.
+    @State private var exportTitle = "Exporting Video…"
 
     @State private var exportTask: Task<Void, Never>?
 
@@ -48,7 +54,10 @@ struct ContentView: View {
 
     var body: some View {
         VStack {
-            if model.source != nil {
+            if let batch = model.batch {
+                BatchView(batch: batch)
+                    .transition(.opacity)
+            } else if model.source != nil {
                 VStack(spacing: 20) {
                     previewArea
                     controls
@@ -60,7 +69,7 @@ struct ContentView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "apps.iphone")
                         .font(.system(size: 72))
-                    Text("Drop iPhone screenshot or\n screen recording here")
+                    Text("Drop iPhone screenshots or\n screen recordings here")
                         .font(.title2)
                         .multilineTextAlignment(.center)
                 }
@@ -77,6 +86,11 @@ struct ContentView: View {
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         .onChange(of: model.compositeSize) { _, size in
             scheduleResize(toFit: size)
+        }
+        .onChange(of: model.batch != nil) { _, isBatch in
+            if isBatch {
+                scheduleResize(toContentSize: Self.batchSize)
+            }
         }
 
         // MARK: - Toast Overlay
@@ -105,30 +119,25 @@ struct ContentView: View {
         // and recordings can arrive as a file URL or as promised movie data
         // (the Simulator's recording thumbnail, for example).
         .onDrop(of: [.fileURL, .movie, .image], isTargeted: nil) { providers in
-            guard let provider = providers.first else {
-                return false
-            }
-            return handleDrop(provider)
+            handleDrop(providers)
         }
 
         // MARK: - On Open URL
 
         .onOpenURL { url in
-            loadAsync { try await model.load(from: url) }
+            open([.file(url)])
         }
 
         // MARK: - File Importer
 
         .fileImporter(
             isPresented: $isImporterPresented,
-            allowedContentTypes: [.png, .jpeg, .movie],
-            allowsMultipleSelection: false
+            allowedContentTypes: [.png, .jpeg, .movie, .folder],
+            allowsMultipleSelection: true
         ) { result in
             switch result {
             case .success(let urls):
-                if let url = urls.first {
-                    loadAsync { try await model.load(from: url, isSecurityScoped: true) }
-                }
+                open(urls.map { .file($0) }, isSecurityScoped: true)
             case .failure(let error):
                 dump(error)
             }
@@ -146,6 +155,12 @@ struct ContentView: View {
             }
             ToolbarItem(placement: .automatic) {
                 Button {
+                    if model.batch != nil {
+                        withAnimation {
+                            model.clear()
+                        }
+                        return
+                    }
                     Task {
                         await model.freezeVideoFrame()
                         startDate = Date()
@@ -164,7 +179,9 @@ struct ContentView: View {
             }
             ToolbarItem(placement: .automatic) {
                 Button {
-                    if let selection = model.selection {
+                    if let batch = model.batch {
+                        exportBatch(batch)
+                    } else if let selection = model.selection {
                         if model.isVideo {
                             exportVideo(name: selection.fileName)
                         } else if let image = model.compositedImage {
@@ -216,46 +233,14 @@ struct ContentView: View {
 
     @ViewBuilder private var controls: some View {
         VStack(spacing: 12) {
-            if let selection = model.selection, let selected = model.selectedModelColor {
-                Picker(selection.bezel.model, selection: Binding(
-                    get: { selected },
-                    set: { model.select($0) }
-                )) {
-                    ForEach(model.models, id: \.self) { deviceModel in
-                        Section(deviceModel) {
-                            ForEach(model.colors(for: deviceModel), id: \.self) { color in
-                                Text(color)
-                                    .tag(ModelColor(model: deviceModel, color: color))
-                            }
-                        }
-                    }
-                }
-                .pickerStyle(.menu)
-                .frame(maxWidth: 260)
-
-                HStack {
-                    if model.poses.count > 1 {
-                        Picker("Pose", selection: Binding(
-                            get: { selection.bezel.pose },
-                            set: { model.select($0) }
-                        )) {
-                            ForEach(model.poses, id: \.self) { pose in
-                                Text(pose.shortName).tag(pose)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        .fixedSize()
-                    }
-                    if selection.bezel.pose.isLandscape {
-                        Button {
-                            model.toggleRotation()
-                        } label: {
-                            Label("Rotate", systemImage: "rotate.right")
-                        }
-                        .help("Rotate 180° to put the Dynamic Island on the other side")
-                    }
-                }
+            if let selection = model.selection {
+                BezelControls(
+                    choices: model.choices,
+                    selection: selection,
+                    onSelectModelColor: { model.select($0) },
+                    onSelectPose: { model.select($0) },
+                    onRotate: { model.toggleRotation() }
+                )
 
                 if model.isVideo {
                     videoBackgroundControls
@@ -424,66 +409,132 @@ struct ContentView: View {
 
     // MARK: - Drop
 
-    private func handleDrop(_ provider: NSItemProvider) -> Bool {
+    /// Something dropped or opened.
+    enum OpenedItem {
+        case file(URL)
+        case image(NSImage)
+    }
+
+    private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
+        guard !providers.isEmpty else {
+            return false
+        }
+        Task { @MainActor in
+            var items: [OpenedItem] = []
+            for provider in providers {
+                if let item = await resolve(provider) {
+                    items.append(item)
+                }
+            }
+            if items.isEmpty {
+                showToast(AppError.unsupportedFile.message)
+            } else {
+                open(items)
+            }
+        }
+        return true
+    }
+
+    /// Turns a dropped item into a file URL or an image. Recordings can
+    /// arrive as a file URL or as promised movie data (the Simulator's
+    /// recording thumbnail, for example).
+    private func resolve(_ provider: NSItemProvider) async -> OpenedItem? {
         if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-            _ = provider.loadTransferable(type: URL.self) { result in
-                Task { @MainActor in
+            return await withCheckedContinuation { continuation in
+                _ = provider.loadTransferable(type: URL.self) { result in
                     switch result {
                     case .success(let url):
-                        loadAsync { try await model.load(from: url) }
+                        continuation.resume(returning: .file(url))
                     case .failure(let error):
                         print("Could not load dropped URL: \(error)")
-                        showToast(AppError.unsupportedFile.message)
+                        continuation.resume(returning: nil)
                     }
                 }
             }
-            return true
         }
 
         if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
             // The file only exists until the handler returns, so it is
             // copied somewhere that lasts while the recording is open.
-            provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
-                var copy: URL?
-                if let url {
+            return await withCheckedContinuation { continuation in
+                provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
+                    guard let url else {
+                        print("Could not load dropped movie: \(String(describing: error))")
+                        continuation.resume(returning: nil)
+                        return
+                    }
                     let directory = FileManager.default.temporaryDirectory
                         .appendingPathComponent(UUID().uuidString, isDirectory: true)
                     let destination = directory.appendingPathComponent(url.lastPathComponent)
                     do {
                         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                         try FileManager.default.copyItem(at: url, to: destination)
-                        copy = destination
+                        continuation.resume(returning: .file(destination))
                     } catch {
                         print("Could not copy dropped movie: \(error)")
-                    }
-                } else if let error {
-                    print("Could not load dropped movie: \(error)")
-                }
-                Task { @MainActor in
-                    if let copy {
-                        loadAsync { try await model.load(from: copy) }
-                    } else {
-                        showToast(AppError.unsupportedFile.message)
+                        continuation.resume(returning: nil)
                     }
                 }
             }
-            return true
         }
 
         if provider.canLoadObject(ofClass: NSImage.self) {
-            _ = provider.loadObject(ofClass: NSImage.self) { image, _ in
-                Task { @MainActor in
-                    if let image = image as? NSImage {
-                        load { try model.loadScreenshot(image) }
-                    } else {
-                        showToast(AppError.unsupportedFile.message)
-                    }
+            return await withCheckedContinuation { continuation in
+                _ = provider.loadObject(ofClass: NSImage.self) { image, _ in
+                    continuation.resume(returning: (image as? NSImage).map { .image($0) })
                 }
             }
-            return true
         }
 
-        return false
+        return nil
+    }
+
+    /// Opens dropped, opened or imported items. More than one supported
+    /// file, or any folder, makes a batch; so does anything opened while a
+    /// batch is showing. Otherwise the single file opens as before.
+    private func open(_ items: [OpenedItem], isSecurityScoped: Bool = false) {
+        let urls = items.compactMap { item -> URL? in
+            if case .file(let url) = item {
+                return url
+            }
+            return nil
+        }
+        let images = items.compactMap { item -> NSImage? in
+            if case .image(let image) = item {
+                return image
+            }
+            return nil
+        }
+
+        // Folders from the file importer must be accessed before they can
+        // be listed.
+        let scopedURLs = isSecurityScoped ? urls.filter { $0.startAccessingSecurityScopedResource() } : []
+        let (files, containsFolder) = BatchPlanning.expand(urls)
+        let supportedCount = files.filter { MediaKind(url: $0) != nil }.count + images.count
+
+        if model.batch == nil, !containsFolder, files.count + images.count == 1 {
+            scopedURLs.forEach { $0.stopAccessingSecurityScopedResource() }
+            if let url = files.first {
+                loadAsync { try await model.load(from: url, isSecurityScoped: isSecurityScoped) }
+            } else if let image = images.first {
+                load { try model.loadScreenshot(image) }
+            }
+            return
+        }
+
+        guard supportedCount > 0 || model.batch != nil || files.count + images.count > 1 else {
+            scopedURLs.forEach { $0.stopAccessingSecurityScopedResource() }
+            showToast(AppError.unsupportedFile.message)
+            return
+        }
+
+        let inputs = files.map { BatchInput(url: $0) } + images.compactMap { image in
+            image.cgImage(forProposedRect: nil, context: nil, hints: nil).map { BatchInput(image: $0) }
+        }
+        withAnimation(.smooth) {
+            model.addToBatch(inputs)
+        }
+        model.batch?.adoptSecurityScopedURLs(scopedURLs)
     }
 
     private func showError(_ error: Error) {
@@ -534,6 +585,7 @@ struct ContentView: View {
             guard response == .OK, let url = panel.url else {
                 return
             }
+            exportTitle = "Exporting Video…"
             exportProgress = 0
             exportTask = Task {
                 do {
@@ -551,9 +603,53 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Export Batch
+
+    /// Exports the selected items, or all of them, to a folder.
+    func exportBatch(_ batch: BatchModel) {
+        let ids = batch.selectedIDs.isEmpty ? Set(batch.items.map(\.id)) : batch.selectedIDs
+        let files = batch.dragFiles(for: ids)
+        let skipped = ids.count - files.count
+        guard !files.isEmpty else {
+            showToast("Nothing to export yet")
+            return
+        }
+
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Export"
+        panel.message = files.count == 1 ? "Choose a folder for the framed file." : "Choose a folder for the \(files.count) framed files."
+        panel.directoryURL = batch.items.compactMap(\.originalURL).first?.deletingLastPathComponent()
+        panel.begin { response in
+            guard response == .OK, let folder = panel.url else {
+                return
+            }
+            exportTitle = "Exporting…"
+            exportProgress = 0
+            exportTask = Task {
+                do {
+                    let summary = try await BatchExporter.export(files, skipped: skipped, to: folder) { done, total in
+                        exportTitle = "Exporting \(min(done + 1, total)) of \(total)…"
+                        exportProgress = total > 0 ? Double(done) / Double(total) : 1
+                    }
+                    showToast(summary.message)
+                } catch is CancellationError {
+                    showToast("Export cancelled")
+                } catch {
+                    showError(error)
+                }
+                exportProgress = nil
+                exportTask = nil
+            }
+        }
+    }
+
     private func exportProgressView(_ progress: Double) -> some View {
         VStack(spacing: 12) {
-            Text("Exporting Video…")
+            Text(exportTitle)
                 .font(.headline)
             ProgressView(value: progress)
                 .frame(width: 200)
@@ -571,6 +667,15 @@ struct ContentView: View {
     /// the toolbar buttons overflow into a menu.
     static let minimumSize = CGSize(width: 400, height: 360)
 
+    /// Content size of the window when a batch opens.
+    static let batchSize = CGSize(width: 820, height: 700)
+
+    private func scheduleResize(toContentSize size: CGSize) {
+        pendingResize = nil
+        pendingContentSize = size
+        deferResize()
+    }
+
     private func scheduleResize(toFit size: CGSize?) {
         pendingResize = size
         deferResize()
@@ -582,7 +687,7 @@ struct ContentView: View {
     /// Resizing the window while SwiftUI renders makes NSHostingView lay
     /// out reentrantly, which it skips.
     private func deferResize() {
-        guard pendingResize != nil else {
+        guard pendingResize != nil || pendingContentSize != nil else {
             return
         }
         RunLoop.main.perform(inModes: [.default]) {
@@ -596,6 +701,11 @@ struct ContentView: View {
     /// the window's content area and center. Padding and controls keep
     /// their size, so they are left out of the aspect ratio.
     private func resizeWindowIfNeeded() {
+        if let window, let size = pendingContentSize {
+            pendingContentSize = nil
+            setWindowContentSize(size, of: window)
+            return
+        }
         guard let window, let imageSize = pendingResize, imageSize.width > 0, imageSize.height > 0,
               previewAreaSize.width > 0, previewAreaSize.height > 0 else {
             return
@@ -651,6 +761,22 @@ struct ContentView: View {
             }
         }
 
+        setWindowContentSize(size, of: window)
+    }
+
+    /// Animates the window to a content size, keeping its center and
+    /// staying on screen.
+    private func setWindowContentSize(_ size: CGSize, of window: NSWindow) {
+        let contentSize = window.contentLayoutRect.size
+        let chrome = CGSize(
+            width: window.frame.width - contentSize.width,
+            height: window.frame.height - contentSize.height
+        )
+        var size = size
+        if let visible = window.screen?.visibleFrame {
+            size.width = min(size.width, visible.width - chrome.width)
+            size.height = min(size.height, visible.height - chrome.height)
+        }
         var frame = CGRect(
             x: 0,
             y: 0,

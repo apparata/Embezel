@@ -104,8 +104,8 @@ xcodebuild -project AppSnap.xcodeproj -scheme "AppSnap (Debug)" -destination 'pl
     `freezeVideoFrame` swaps in a still frame before clearing, because the
     dissolve shader can't apply to the AppKit player view.
   - Every composite, including each picker, pose or rotation change, is
-    copied to the pasteboard. Bezel images and screen masks are cached by
-    image name.
+    copied to the pasteboard. Bezel images and screen masks come from
+    `BezelAssets`.
 - `AppSnap/ContentView.swift`: the single main view. Inputs are drag and drop
   (one `onDrop` handler for file URLs, promised movie files such as the
   Simulator's recording thumbnail, and images; stacked `dropDestination`s
@@ -125,6 +125,41 @@ xcodebuild -project AppSnap.xcodeproj -scheme "AppSnap (Debug)" -destination 'pl
   (`resizeWindowIfNeeded`, using the window from `WindowReflection`). The
   minimum width is 400 pt, because narrower windows push toolbar buttons into
   an overflow menu.
+
+### Batches
+
+Dropping more than one supported file, or any folder, opens a batch
+(`ContentModel.batch`); anything opened while a batch is showing is added to
+it. `ContentView.open(_:isSecurityScoped:)` makes that decision for drops,
+Finder opens and the file importer alike. Folders contribute only their
+top-level files (`BatchPlanning.expand`).
+
+- `AppSnap/Batch/BatchPlanning.swift`: pure logic with no UI or rendering:
+  folder expansion, group keys (items whose candidates have the same model
+  list share a group, so both orientations of a size land together), pose
+  options, output names (`<original> - <Model> - <Color> - <Pose>`) and
+  " 2" collision suffixes.
+- `AppSnap/Batch/BatchModel.swift`: items and groups. An item is framed with
+  its own `Override` if it has one, otherwise with its group's model, color
+  and pose, plus its own rotation (`effectiveSelection(for:)`). Items are
+  probed and rendered off the main actor, at most 4 at a time
+  (`RenderLimiter`). Each render is written to a PNG under
+  `Embezel-Batch-<UUID>` in the temporary folder, and only a thumbnail stays
+  in memory. Those folders are removed on clear, launch and quit.
+- `AppSnap/Batch/BatchDragSource.swift`: an AppKit drag source, because
+  SwiftUI drags carry a single item. Each dragged file is an
+  `NSFilePromiseProvider` that also offers the rendered file's URL, for apps
+  that don't take promises. The view also reports plain clicks (for
+  selection) and lets right clicks through to the SwiftUI context menu.
+- `AppSnap/Batch/BatchView.swift` / `BatchTile.swift`: the grid, group
+  headers with `BezelControls`, selection (click, ⌘, ⇧, ⌘A), context menus,
+  the per-item Customize popover, ⌘C and Delete.
+- `AppSnap/Batch/BatchExporter.swift`: export to a folder, never overwriting.
+
+`AppSnap/Device/BezelAssets.swift` caches bezel images and screen masks for
+both the single view and batches; `loadAssets(for:)` computes masks off the
+main thread. `AppSnap/Main Window/BezelControls.swift` is the shared model +
+color picker, pose control and rotate button.
 
 Scenes are registered in `AppSnap/MacApp.swift`: the main window, about and
 attributions. Sparkle's `SPUStandardUpdaterController` lives there too and

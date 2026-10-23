@@ -33,7 +33,15 @@ struct MacApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        BatchModel.removeTemporaryFolders()
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        BatchModel.removeTemporaryFolders()
     }
 }

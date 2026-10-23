@@ -19,6 +19,10 @@ the framed image back out — or export it as a PNG.
   QuickTime are framed too, with a looping preview. Export as HEVC with a
   transparent background (`.mov`; QuickTime, Safari, Keynote, Final Cut) or
   on a solid color (`.mp4`, plays anywhere). Audio is kept.
+- Batches: drop several screenshots or a folder to frame them all at once.
+  Screenshots are grouped by device, with one model and color picker per
+  group; any image can have its own setting instead. Select tiles and drag
+  them out together, drag all of them at once, or export them to a folder.
 - The window resizes to fit the frame's shape.
 - Drag the framed result straight into another app, export it to a PNG, or let
   the app copy it to the clipboard automatically.

@@ -30,12 +30,6 @@ enum AppError: Error {
     }
 }
 
-/// A model and color, as chosen in the picker.
-struct ModelColor: Hashable {
-    let model: String
-    let color: String
-}
-
 @MainActor @Observable class ContentModel {
 
     /// A screenshot or a screen recording.
@@ -87,20 +81,22 @@ struct ModelColor: Hashable {
     /// accessed until the recording is cleared.
     @ObservationIgnored private var securityScopedURL: URL?
 
-    @ObservationIgnored private var bezelImages: [String: CGImage] = [:]
-    @ObservationIgnored private var screenMasks: [String: CGImage] = [:]
-
-    /// Sizes that only 1.x devices had, so a clearer message can be shown.
-    private static let droppedDevices: [(portraitSize: CGSize, name: String)] = [
-        (CGSize(width: 1170, height: 2532), "iPhone 14"),
-        (CGSize(width: 1284, height: 2778), "iPhone 14 Plus")
-    ]
+    /// Set while several files are being framed at once. The single
+    /// screenshot or recording state is empty then.
+    private(set) var batch: BatchModel?
 
     init() {
         player.isMuted = true
     }
 
     func clear() {
+        batch?.clear()
+        batch = nil
+        clearSingle()
+    }
+
+    /// Clears the single screenshot or recording.
+    private func clearSingle() {
         compositionTask?.cancel()
         loopTask?.cancel()
         player.replaceCurrentItem(with: nil)
@@ -113,34 +109,25 @@ struct ModelColor: Hashable {
         videoComposition = nil
     }
 
+    // MARK: - Batch
+
+    /// Starts a batch, or adds to the one that is open.
+    func addToBatch(_ inputs: [BatchInput]) {
+        if batch == nil {
+            clearSingle()
+            batch = BatchModel()
+        }
+        batch?.add(inputs)
+    }
+
     // MARK: - Picker Support
 
-    /// Models that fit the current screenshot, newest first.
-    var models: [String] {
-        candidates.map(\.model).uniqued()
-    }
-
-    func colors(for model: String) -> [String] {
-        candidates.filter { $0.model == model }.map(\.color).uniqued()
-    }
-
-    /// Poses of the selected model and color that fit the screenshot.
-    var poses: [Pose] {
-        guard let bezel = selection?.bezel else {
-            return []
-        }
-        return candidates
-            .filter { $0.model == bezel.model && $0.color == bezel.color }
-            .map(\.pose)
-    }
-
-    var selectedModelColor: ModelColor? {
-        selection.map { ModelColor(model: $0.bezel.model, color: $0.bezel.color) }
+    var choices: BezelChoices {
+        BezelChoices(candidates: candidates)
     }
 
     func select(_ modelColor: ModelColor) {
-        let matching = candidates.filter { $0.model == modelColor.model && $0.color == modelColor.color }
-        guard let bezel = matching.first(where: { $0.pose == selection?.bezel.pose }) ?? matching.first else {
+        guard let bezel = choices.bezel(for: modelColor, preferring: selection?.bezel.pose) else {
             return
         }
         select(Selection(bezel: bezel, isRotated180: selection?.isRotated180 ?? false))
@@ -235,12 +222,11 @@ struct ModelColor: Hashable {
             throw AppError.unsupportedFile
         }
         let size = CGSize(width: cgImage.width, height: cgImage.height)
-        let matches = Self.matchingBezels(for: size, allowScaling: false)
+        let matches = BezelMatching.bezels(for: size, allowScaling: false)
 
         guard let bezel = matches.first else {
-            let portraitSize = size.width > size.height ? CGSize(width: size.height, height: size.width) : size
-            if let device = Self.droppedDevices.first(where: { $0.portraitSize == portraitSize }) {
-                throw AppError.droppedDevice(device.name)
+            if let device = BezelMatching.droppedDevice(for: size) {
+                throw AppError.droppedDevice(device)
             }
             throw AppError.unsupportedScreenshotSize
         }
@@ -273,7 +259,7 @@ struct ModelColor: Hashable {
                 print("Could not load video at \(url.absoluteString): \(error)")
                 throw AppError.unsupportedFile
             }
-            matches = Self.matchingBezels(for: size, allowScaling: true)
+            matches = BezelMatching.bezels(for: size, allowScaling: true)
             guard !matches.isEmpty else {
                 throw AppError.unsupportedRecordingSize
             }
@@ -317,24 +303,6 @@ struct ModelColor: Hashable {
         return try? await generator.image(at: time).image
     }
 
-    /// Bezels whose screen is exactly the given size, in catalog order.
-    ///
-    /// Screenshots are always native size. Recordings are often not (the
-    /// iPhone's own screen recorder may downscale), so with `allowScaling`
-    /// and no exact match, bezels with the same screen aspect ratio (within
-    /// 1%) fit too.
-    private static func matchingBezels(for size: CGSize, allowScaling: Bool) -> [Bezel] {
-        let exact = BezelCatalog.all.filter { $0.screenshotSize == size }
-        guard exact.isEmpty, allowScaling, size.width > 0, size.height > 0 else {
-            return exact
-        }
-        let aspect = size.width / size.height
-        return BezelCatalog.all.filter { bezel in
-            let screen = bezel.screenshotSize
-            return abs(screen.width / screen.height - aspect) / aspect < 0.01
-        }
-    }
-
     // MARK: - Compositing
 
     private func makeComposite() {
@@ -350,12 +318,11 @@ struct ModelColor: Hashable {
 
     private func makeImageComposite(_ screenshotImage: CGImage) {
         guard let selection,
-              let bezelImage = bezelImage(for: selection.bezel),
-              let screenMask = screenMask(for: selection.bezel, bezelImage: bezelImage),
+              let assets = BezelAssets.shared.assets(for: selection.bezel),
               let image = BezelRenderer.render(
                 screenshot: screenshotImage,
-                bezelImage: bezelImage,
-                screenMask: screenMask,
+                bezelImage: assets.image,
+                screenMask: assets.mask,
                 selection: selection
               ) else {
             compositedImage = nil
@@ -372,9 +339,7 @@ struct ModelColor: Hashable {
     /// composition is ready.
     private func makeVideoComposition(_ asset: AVURLAsset) {
         compositionTask?.cancel()
-        guard let selection,
-              let bezelImage = bezelImage(for: selection.bezel),
-              let screenMask = screenMask(for: selection.bezel, bezelImage: bezelImage) else {
+        guard let selection, let assets = BezelAssets.shared.assets(for: selection.bezel) else {
             videoComposition = nil
             return
         }
@@ -384,8 +349,8 @@ struct ModelColor: Hashable {
                 let composition = try await VideoBezelComposer.makeComposition(
                     asset: asset,
                     selection: selection,
-                    bezelImage: bezelImage,
-                    screenMask: screenMask,
+                    bezelImage: assets.image,
+                    screenMask: assets.mask,
                     background: background
                 )
                 guard !Task.isCancelled else {
@@ -434,44 +399,9 @@ struct ModelColor: Hashable {
         )
     }
 
-    /// Loads the bezel at its full pixel size. The PNGs are tagged 216 dpi,
-    /// so the image's point size must not be used for geometry.
-    private func bezelImage(for bezel: Bezel) -> CGImage? {
-        if let image = bezelImages[bezel.imageName] {
-            return image
-        }
-        var rect = CGRect(origin: .zero, size: bezel.canvasSize)
-        guard let image = NSImage(named: bezel.imageName)?.cgImage(forProposedRect: &rect, context: nil, hints: nil),
-              image.width == Int(bezel.canvasSize.width),
-              image.height == Int(bezel.canvasSize.height) else {
-            print("Could not load bezel image \(bezel.imageName)")
-            return nil
-        }
-        bezelImages[bezel.imageName] = image
-        return image
-    }
-
-    private func screenMask(for bezel: Bezel, bezelImage: CGImage) -> CGImage? {
-        if let mask = screenMasks[bezel.imageName] {
-            return mask
-        }
-        let mask = BezelRenderer.makeScreenMask(bezelImage: bezelImage, bezel: bezel)
-        screenMasks[bezel.imageName] = mask
-        return mask
-    }
-
     func copyImageToPasteboard(_ image: NSImage) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.writeObjects([image])
-    }
-}
-
-// MARK: - Helpers
-
-private extension Array where Element: Hashable {
-    func uniqued() -> [Element] {
-        var seen: Set<Element> = []
-        return filter { seen.insert($0).inserted }
     }
 }
